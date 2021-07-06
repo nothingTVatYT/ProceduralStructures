@@ -28,6 +28,7 @@ public class BaseBuilderEditor : Editor
             childByMaterial.transform.localPosition = Vector3.zero;
             childByMaterial.transform.localRotation = Quaternion.identity;
             childByMaterial.transform.localScale = Vector3.one;
+            childByMaterial.isStatic = target.isStatic;
         }
         MeshFilter meshFilter = childByMaterial.AddComponent<MeshFilter>();
         meshFilter.mesh = mesh;
