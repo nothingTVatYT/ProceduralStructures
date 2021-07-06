@@ -28,8 +28,44 @@ public class HouseBuilderEditor : BaseBuilderEditor {
         float length = house.length;
         foreach (HouseDefinition.BuildingStructure bs in house.layers) {
             float height = bs.height;
-            BuildResult br = CreateBoxSides(center, width, length, height, bs.slopeX, bs.slopeZ, bs.uvScale);
+            List<Face> layerFaces = new List<Face>();
+            Vector3 a = center + new Vector3(-width/2, 0, -length/2);
+            Vector3 b = center + new Vector3(-width/2, 0, length/2);
+            Vector3 c = center + new Vector3(width/2, 0, length/2);
+            Vector3 d = center + new Vector3(width/2, 0, -length/2);
+            Vector3 a1 = a + new Vector3(bs.slopeX*height, height, bs.slopeZ*height);
+            Vector3 b1 = b + new Vector3(bs.slopeX*height, height, -bs.slopeZ*height);
+            Vector3 c1 = c + new Vector3(-bs.slopeX*height, height, -bs.slopeZ*height);
+            Vector3 d1 = d + new Vector3(-bs.slopeX*height, height, bs.slopeZ*height);
+            Face frontface = new Face(a, a1, d1, d);
+            frontface.SetUVFront(width * bs.uvScale, height * bs.uvScale);
+            bool cutoutFound = false;
+            foreach (HouseDefinition.WallCutout co in bs.cutouts) {
+                if (co.side == HouseDefinition.Side.Front) {
+                    Rect relativeRect = new Rect(frontface.a.x + co.dimension.x, frontface.a.y + co.dimension.y, co.dimension.width, co.dimension.height);
+                    List<Face> sliced = Cutout(new List<Face> {frontface}, relativeRect, bs.uvScale);
+                    cutoutFound = true;
+                    layerFaces.AddRange(sliced);
+                    break; // allow only one slicing for now
+                }
+            }
+            if (!cutoutFound) {
+                layerFaces.Add(frontface);
+            }
+            Face rightFace = new Face(d, d1, c1, c);
+            rightFace.SetUVFront(length * bs.uvScale, height * bs.uvScale);
+            layerFaces.Add(rightFace);
+            Face backFace = new Face(c, c1, b1, b);
+            backFace.SetUVFront(width * bs.uvScale, height * bs.uvScale);
+            layerFaces.Add(backFace);
+            Face leftFace = new Face(b, b1, a1, a);
+            leftFace.SetUVFront(length * bs.uvScale, height * bs.uvScale);
+            layerFaces.Add(leftFace);
+            width -= 2*bs.slopeX*height;
+            length -= 2*bs.slopeZ*height;
+
             List<Face> faces;
+
             Material material = bs.material;
             if (material == null) {
                 material = new Material(Shader.Find("Standard"));
@@ -40,9 +76,7 @@ public class HouseBuilderEditor : BaseBuilderEditor {
                 faces = new List<Face>();
                 facesByMaterial[material] = faces;
             }
-            faces.AddRange(br.faces);
-            width = br.topWidth;
-            length = br.topLength;
+            faces.AddRange(layerFaces);
             center += new Vector3(0, height, 0);
         }
         if (house.roofHeight > 0) {

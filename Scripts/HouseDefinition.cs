@@ -6,6 +6,15 @@ using System;
 [CreateAssetMenu(fileName = "HouseDefinition", menuName = "Procedural Structures/House Definition", order = 1)]
 public class HouseDefinition : ScriptableObject
 {
+    public enum Side {Front, Back, Right, Left}
+
+    [Serializable]
+    public class WallCutout {
+        public string name;
+        public Side side = Side.Front;
+        public Rect dimension; 
+    }
+
     [Serializable]
     public class BuildingStructure {
         public string name;
@@ -16,6 +25,7 @@ public class HouseDefinition : ScriptableObject
         public float slopeZ = 0;
         public Material material;
         public float uvScale = 1;
+        public WallCutout[] cutouts;
     }
 
     [Header("Basement Settings")]
