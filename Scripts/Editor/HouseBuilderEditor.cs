@@ -28,12 +28,7 @@ public class HouseBuilderEditor : BaseBuilderEditor {
         float length = house.length;
         foreach (HouseDefinition.BuildingStructure bs in house.layers) {
             float height = bs.height;
-            BuildResult br;
-            if (bs.isRoof) {
-                br = CreatePrism(center, width, length, height, bs.slopeZ > 0, bs.uvScale);
-            } else {
-                br = CreateBoxSides(center, width, length, height, bs.slopeX, bs.slopeZ, bs.uvScale);
-            }
+            BuildResult br = CreateBoxSides(center, width, length, height, bs.slopeX, bs.slopeZ, bs.uvScale);
             List<Face> faces;
             Material material = bs.material;
             if (material == null) {
@@ -67,27 +62,28 @@ public class HouseBuilderEditor : BaseBuilderEditor {
                 faces = new List<Face>();
                 facesByMaterial[material] = faces;
             }
+            float uvScale = house.uvScaleGable;
             Vector3 e1 = center + new Vector3(0, house.roofHeight, -length/2);
             Vector3 e2 = center + new Vector3(0, house.roofHeight, length/2);
             Face frontFace = new Face(a, e1, d);
-            frontFace.SetUVFront(width, house.roofHeight);
+            frontFace.SetUVFront(width * uvScale, house.roofHeight * uvScale);
             faces.Add(frontFace);
             Face backface = new Face(c, e2, b);
-            backface.SetUVFront(width, house.roofHeight);
+            backface.SetUVFront(width * uvScale, house.roofHeight * uvScale);
             faces.Add(backface);
             Vector3 extZ = new Vector3(0, 0, house.roofExtendZ);
             if (house.roofExtendZ > 0) {
                 Face rightBackExtend = new Face(e2, c, c + extZ, e2 + extZ);
-                rightBackExtend.SetUVFront(house.roofExtendZ, width/2);
+                rightBackExtend.SetUVFront(house.roofExtendZ * uvScale, width/2 * uvScale);
                 faces.Add(rightBackExtend);
                 Face rightFrontExtend = new Face(e1 - extZ, d - extZ, d, e1);
-                rightFrontExtend.SetUVFront(house.roofExtendZ, width/2);
+                rightFrontExtend.SetUVFront(house.roofExtendZ * uvScale, width/2 * uvScale);
                 faces.Add(rightFrontExtend);
                 Face leftBackExtend = new Face(b, e2, e2 + extZ, b + extZ);
-                leftBackExtend.SetUVFront(house.roofExtendZ, width/2);
+                leftBackExtend.SetUVFront(house.roofExtendZ * uvScale, width/2 * uvScale);
                 faces.Add(leftBackExtend);
                 Face leftFrontExtend = new Face(a - extZ, e1 - extZ, e1, a);
-                leftFrontExtend.SetUVFront(house.roofExtendZ, width/2);
+                leftFrontExtend.SetUVFront(house.roofExtendZ * uvScale, width/2 * uvScale);
                 faces.Add(leftFrontExtend);
                 e2 = e2 + extZ;
                 e1 = e1 - extZ;
@@ -100,13 +96,13 @@ public class HouseBuilderEditor : BaseBuilderEditor {
                 float m = -house.roofHeight / (width/2);
                 Vector3 extX = new Vector3(house.roofExtendX, house.roofExtendX * m, 0);
                 Face rightExtend = new Face(dr, dr+extX, cr+extX, cr);
-                rightExtend.SetUVFront(length, house.roofExtendX);
+                rightExtend.SetUVFront(length * uvScale, house.roofExtendX * uvScale);
                 faces.Add(rightExtend);
                 dr = dr + extX;
                 cr = cr + extX;
                 extX = new Vector3(-house.roofExtendX, house.roofExtendX * m, 0);
                 Face leftExtend = new Face(br, br+extX, ar+extX, ar);
-                leftExtend.SetUVFront(length, house.roofExtendX);
+                leftExtend.SetUVFront(length * uvScale, house.roofExtendX * uvScale);
                 faces.Add(leftExtend);
                 br = br + extX;
                 ar = ar + extX;
@@ -114,7 +110,7 @@ public class HouseBuilderEditor : BaseBuilderEditor {
 
             Vector3 roofThickness = new Vector3(0, house.roofThickness, 0);
             List<Vector3> roofEdges = new List<Vector3> {ar, e1, dr, cr, e2, br, ar};
-            faces.AddRange(ExtrudeEdges(roofEdges, roofThickness));
+            faces.AddRange(ExtrudeEdges(roofEdges, roofThickness, uvScale));
 
             ar = ar + roofThickness;
             br = br + roofThickness;
@@ -133,12 +129,13 @@ public class HouseBuilderEditor : BaseBuilderEditor {
                 faces = new List<Face>();
                 facesByMaterial[material] = faces;
             }
+            uvScale = house.uvScaleRoof;
             Face leftRoof = new Face(br, e2, e1, ar);
             float halfSlope = Mathf.Sqrt(width/2 * width/2 + house.roofHeight * house.roofHeight);
-            leftRoof.SetUVFront(length + 2 * house.roofExtendZ, halfSlope);
+            leftRoof.SetUVFront((length + 2 * house.roofExtendZ) * uvScale, halfSlope * uvScale);
             faces.Add(leftRoof);
             Face rightRoof = new Face(dr, e1, e2, cr);
-            rightRoof.SetUVFront(length + 2 * house.roofExtendZ, halfSlope);
+            rightRoof.SetUVFront((length + 2 * house.roofExtendZ) * uvScale, halfSlope * uvScale);
             faces.Add(rightRoof);
         }
 

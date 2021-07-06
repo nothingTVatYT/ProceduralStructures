@@ -10,7 +10,6 @@ public class HouseDefinition : ScriptableObject
     public class BuildingStructure {
         public string name;
         public float height;
-        public bool isRoof = false;
         [Tooltip("This is an indent per unit height.")]
         public float slopeX = 0;
         [Tooltip("This is an indent per unit height.")]
@@ -30,7 +29,9 @@ public class HouseDefinition : ScriptableObject
     public float roofHeight;
     public float gableWidth;
     public Material materialRoof;
+    public float uvScaleRoof = 1;
     public Material materialGable;
+    public float uvScaleGable = 1;
     public float roofExtendX;
     public float roofExtendZ;
     public float roofThickness;

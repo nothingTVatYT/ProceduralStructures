@@ -179,7 +179,7 @@ public class BaseBuilderEditor : Editor
         return vertices;
     }
 
-    protected List<Face> ExtrudeEdges(List<Vector3> vertices, Vector3 direction) {
+    protected List<Face> ExtrudeEdges(List<Vector3> vertices, Vector3 direction, float uvScale=1f) {
         List<Face> faces = new List<Face>();
         Vector3 prev = Vector3.zero;
         bool firstVertex = true;
@@ -187,7 +187,7 @@ public class BaseBuilderEditor : Editor
         foreach (Vector3 v in vertices) {
             if (!firstVertex) {
                 Face face = new Face(prev, prev + direction, v + direction, v);
-                face.SetUVFront(Vector3.Distance(prev, v), el);
+                face.SetUVFront(Vector3.Distance(prev, v) * uvScale, el * uvScale);
                 faces.Add(face);
             }
             prev = v;
