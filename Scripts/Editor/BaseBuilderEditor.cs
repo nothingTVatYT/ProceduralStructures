@@ -197,7 +197,7 @@ public class BaseBuilderEditor : Editor
         return faces;
     }
 
-    protected List<Face> IdentFace(Face face, Vector3 direction, float uvScale=1f) {
+    protected List<Face> IndentFace(Face face, Vector3 direction, float uvScale=1f) {
         List<Face> faces = new List<Face>();
         Vector3 prev = Vector3.zero;
         bool firstVertex = true;
@@ -245,7 +245,7 @@ public class BaseBuilderEditor : Editor
                 result.Add(nf[0]); // bottom center
                 nf2 = SliceFace(nf[1], 0, cutoutFace.b.y - nf[1].a.y);
                 //result.Add(nf2[0]); // center
-                result.AddRange(IdentFace(nf2[0], new Vector3(0, 0, 0.3f), uvScale));
+                result.AddRange(IndentFace(nf2[0], new Vector3(0, 0, 0.3f), uvScale));
                 result.Add(nf2[1]); // top center
                 nf = SliceFace(rightColumn, 0, cutoutFace.a.y-rightColumn.a.y);
                 result.Add(nf[0]); // bottom right corner

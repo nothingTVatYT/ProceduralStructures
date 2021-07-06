@@ -22,12 +22,22 @@ MonoBehaviour:
     slopeZ: 0.1
     material: {fileID: 2100000, guid: 9e2aae7ee83e19d468a3f2d21f2fe4ae, type: 2}
     uvScale: 1
+    cutouts: []
   - name: Ground Floor
     height: 3
     slopeX: 0
     slopeZ: 0
     material: {fileID: 2100000, guid: 9e2aae7ee83e19d468a3f2d21f2fe4ae, type: 2}
     uvScale: 1
+    cutouts:
+    - name: Door
+      side: 0
+      dimension:
+        serializedVersion: 2
+        x: 1
+        y: 0.2
+        width: 1
+        height: 2.4
   roofHeight: 3
   gableWidth: 1
   materialRoof: {fileID: 2100000, guid: 1b74884212c29f24c9e3e557378c899f, type: 2}
