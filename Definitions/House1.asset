@@ -18,14 +18,12 @@ MonoBehaviour:
   layers:
   - name: Basement
     height: 3
-    isRoof: 0
     slopeX: 0.1
     slopeZ: 0.1
     material: {fileID: 2100000, guid: 9e2aae7ee83e19d468a3f2d21f2fe4ae, type: 2}
     uvScale: 1
   - name: Ground Floor
     height: 3
-    isRoof: 0
     slopeX: 0
     slopeZ: 0
     material: {fileID: 2100000, guid: 9e2aae7ee83e19d468a3f2d21f2fe4ae, type: 2}
@@ -33,7 +31,9 @@ MonoBehaviour:
   roofHeight: 3
   gableWidth: 1
   materialRoof: {fileID: 2100000, guid: 1b74884212c29f24c9e3e557378c899f, type: 2}
+  uvScaleRoof: 0.5
   materialGable: {fileID: 2100000, guid: ef3aeaa0049cbe447969df3bee614da1, type: 2}
+  uvScaleGable: 1
   roofExtendX: 0.5
   roofExtendZ: 0.5
   roofThickness: 0.1
