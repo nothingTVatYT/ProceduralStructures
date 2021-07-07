@@ -12,7 +12,9 @@ public class HouseDefinition : ScriptableObject
     public class WallCutout {
         public string name;
         public Side side = Side.Front;
-        public Rect dimension; 
+        public Rect dimension;
+        public Material material;
+        public float uvScale = 1;
     }
 
     [Serializable]

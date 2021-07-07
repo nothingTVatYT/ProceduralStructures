@@ -6,6 +6,8 @@ using UnityEditor;
 public class BaseBuilderEditor : Editor
 {
 
+    public static int CUTOUT = 1;
+
     protected void ClearMeshes(GameObject target) {
         for (int i = target.transform.childCount-1; i>=0; i--) {
             GameObject go = target.transform.GetChild(i).gameObject;
@@ -34,6 +36,7 @@ public class BaseBuilderEditor : Editor
         meshFilter.mesh = mesh;
         MeshRenderer meshRenderer = childByMaterial.AddComponent<MeshRenderer>();
         meshRenderer.sharedMaterial = material;
+        mesh.RecalculateNormals();
         mesh.Optimize();
         MeshCollider meshCollider = childByMaterial.AddComponent<MeshCollider>();
         meshCollider.sharedMesh = mesh;
@@ -245,6 +248,7 @@ public class BaseBuilderEditor : Editor
                 result.Add(nf[0]); // bottom center
                 nf2 = SliceFace(nf[1], 0, cutoutFace.b.y - nf[1].a.y);
                 //result.Add(nf2[0]); // center
+                nf2[0].Tag(CUTOUT);
                 result.AddRange(IndentFace(nf2[0], new Vector3(0, 0, 0.3f), uvScale));
                 result.Add(nf2[1]); // top center
                 nf = SliceFace(rightColumn, 0, cutoutFace.a.y-rightColumn.a.y);
@@ -302,6 +306,14 @@ public class BaseBuilderEditor : Editor
         return new Face(a, b, c, d);
     }
 
+    protected Face FindFirstFaceByTag(List<Face> faces, int tag) {
+        foreach (Face f in faces) {
+            if (f.IsTagged(tag)) {
+                return f;
+            }
+        }
+        return null;
+    }
 /*
     Face defined by four corners in clockwise order
     (A bottom left, B top left, C top right, D bottom right)
@@ -325,6 +337,7 @@ public class BaseBuilderEditor : Editor
         public Vector2 uvA,uvB,uvC,uvD;
         public Vector3 normal { get { return Vector3.Cross(b-a, d-a);} }
         public bool isTriangle = false;
+        public int tags = 0;
         public Vector3[] GetVertices() {
             return new Vector3[] { a, b, c, d };
         }
@@ -333,6 +346,15 @@ public class BaseBuilderEditor : Editor
         }
         public override string ToString() {
             return "F(" + a +"," + b + "," + c + "," + d + ")";
+        }
+        public bool IsTagged(int tag) {
+            return (tags & tag) != 0;
+        }
+        public void Tag(int tag) {
+            tags |= tag;
+        }
+        public void UnTag(int tag) {
+            tags &= ~tag;
         }
         public Face MoveFaceBy(Vector3 direction) {
             a = a + direction;

@@ -44,6 +44,26 @@ public class HouseBuilderEditor : BaseBuilderEditor {
                 if (co.side == HouseDefinition.Side.Front) {
                     Rect relativeRect = new Rect(frontface.a.x + co.dimension.x, frontface.a.y + co.dimension.y, co.dimension.width, co.dimension.height);
                     List<Face> sliced = Cutout(new List<Face> {frontface}, relativeRect, bs.uvScale);
+                    if (co.material != bs.material) {
+                        Face doorFace = FindFirstFaceByTag(sliced, CUTOUT);
+                        if (doorFace != null) {
+                            doorFace.SetUVFront(co.dimension.width * co.uvScale, co.dimension.height * co.uvScale);
+                            List<Face> doorFaces;
+
+                            Material material1 = co.material;
+                            if (material1 == null) {
+                                material1 = new Material(Shader.Find("Standard"));
+                            }
+                            if (facesByMaterial.ContainsKey(material1)) {
+                                doorFaces = facesByMaterial[material1];
+                            } else {
+                                doorFaces = new List<Face>();
+                                facesByMaterial[material1] = doorFaces;
+                            }
+                            doorFaces.Add(doorFace);
+                            sliced.Remove(doorFace);
+                        }
+                    }
                     cutoutFound = true;
                     layerFaces.AddRange(sliced);
                     break; // allow only one slicing for now

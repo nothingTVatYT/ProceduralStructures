@@ -10,14 +10,14 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: dd511a36ed4483a51873f1885d21573b, type: 3}
-  m_Name: House1
+  m_Name: House2
   m_EditorClassIdentifier: 
   heightOffset: -2
-  width: 9
-  length: 6
+  width: 8
+  length: 5
   layers:
   - name: Basement
-    height: 3
+    height: 2
     slopeX: 0.1
     slopeZ: 0.1
     material: {fileID: 2100000, guid: 9e2aae7ee83e19d468a3f2d21f2fe4ae, type: 2}
@@ -34,7 +34,7 @@ MonoBehaviour:
       side: 0
       dimension:
         serializedVersion: 2
-        x: 1
+        x: 2
         y: 0.2
         width: 1
         height: 2.4
