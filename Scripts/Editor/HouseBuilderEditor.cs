@@ -15,13 +15,13 @@ public class HouseBuilderEditor : BaseBuilderEditor {
             RebuildHouse();
         }
         if (GUILayout.Button("Remove Meshes")) {
-            ClearMeshes(houseBuilder.gameObject);
+            new Building().ClearMeshes(houseBuilder.gameObject);
         }
     }
 
     private void RebuildHouse() {
         HouseDefinition house = houseBuilder.houseDefinition;
-        Dictionary<Material, List<Face>> facesByMaterial = new Dictionary<Material, List<Face>>();
+        Building building = new Building();
 
         Vector3 center = new Vector3(0, house.heightOffset, 0);
         float width = house.width;
@@ -48,19 +48,7 @@ public class HouseBuilderEditor : BaseBuilderEditor {
                         Face doorFace = FindFirstFaceByTag(sliced, CUTOUT);
                         if (doorFace != null) {
                             doorFace.SetUVFront(co.dimension.width * co.uvScale, co.dimension.height * co.uvScale);
-                            List<Face> doorFaces;
-
-                            Material material1 = co.material;
-                            if (material1 == null) {
-                                material1 = new Material(Shader.Find("Standard"));
-                            }
-                            if (facesByMaterial.ContainsKey(material1)) {
-                                doorFaces = facesByMaterial[material1];
-                            } else {
-                                doorFaces = new List<Face>();
-                                facesByMaterial[material1] = doorFaces;
-                            }
-                            doorFaces.Add(doorFace);
+                            building.AddFace(doorFace, co.material);
                             sliced.Remove(doorFace);
                         }
                     }
@@ -84,19 +72,7 @@ public class HouseBuilderEditor : BaseBuilderEditor {
             width -= 2*bs.slopeX*height;
             length -= 2*bs.slopeZ*height;
 
-            List<Face> faces;
-
-            Material material = bs.material;
-            if (material == null) {
-                material = new Material(Shader.Find("Standard"));
-            }
-            if (facesByMaterial.ContainsKey(material)) {
-                faces = facesByMaterial[material];
-            } else {
-                faces = new List<Face>();
-                facesByMaterial[material] = faces;
-            }
-            faces.AddRange(layerFaces);
+            building.AddFaces(layerFaces, bs.material);
             center += new Vector3(0, height, 0);
         }
         if (house.roofHeight > 0) {
@@ -105,40 +81,29 @@ public class HouseBuilderEditor : BaseBuilderEditor {
             Vector3 c = center + new Vector3(width/2, 0, length/2);
             Vector3 d = center + new Vector3(width/2, 0, -length/2);
 
-            List<Face> faces;
-            Material material = house.materialGable;
-            if (material == null) {
-                material = new Material(Shader.Find("Standard"));
-            }
-            if (facesByMaterial.ContainsKey(material)) {
-                faces = facesByMaterial[material];
-            } else {
-                faces = new List<Face>();
-                facesByMaterial[material] = faces;
-            }
             float uvScale = house.uvScaleGable;
             Vector3 e1 = center + new Vector3(0, house.roofHeight, -length/2);
             Vector3 e2 = center + new Vector3(0, house.roofHeight, length/2);
             Face frontFace = new Face(a, e1, d);
             frontFace.SetUVFront(width * uvScale, house.roofHeight * uvScale);
-            faces.Add(frontFace);
+            building.AddFace(frontFace, house.materialGable);
             Face backface = new Face(c, e2, b);
             backface.SetUVFront(width * uvScale, house.roofHeight * uvScale);
-            faces.Add(backface);
+            building.AddFace(backface, house.materialGable);
             Vector3 extZ = new Vector3(0, 0, house.roofExtendZ);
             if (house.roofExtendZ > 0) {
                 Face rightBackExtend = new Face(e2, c, c + extZ, e2 + extZ);
                 rightBackExtend.SetUVFront(house.roofExtendZ * uvScale, width/2 * uvScale);
-                faces.Add(rightBackExtend);
+                building.AddFace(rightBackExtend, house.materialGable);
                 Face rightFrontExtend = new Face(e1 - extZ, d - extZ, d, e1);
                 rightFrontExtend.SetUVFront(house.roofExtendZ * uvScale, width/2 * uvScale);
-                faces.Add(rightFrontExtend);
+                building.AddFace(rightFrontExtend, house.materialGable);
                 Face leftBackExtend = new Face(b, e2, e2 + extZ, b + extZ);
                 leftBackExtend.SetUVFront(house.roofExtendZ * uvScale, width/2 * uvScale);
-                faces.Add(leftBackExtend);
+                building.AddFace(leftBackExtend, house.materialGable);
                 Face leftFrontExtend = new Face(a - extZ, e1 - extZ, e1, a);
                 leftFrontExtend.SetUVFront(house.roofExtendZ * uvScale, width/2 * uvScale);
-                faces.Add(leftFrontExtend);
+                building.AddFace(leftFrontExtend, house.materialGable);
                 e2 = e2 + extZ;
                 e1 = e1 - extZ;
             }
@@ -151,20 +116,20 @@ public class HouseBuilderEditor : BaseBuilderEditor {
                 Vector3 extX = new Vector3(house.roofExtendX, house.roofExtendX * m, 0);
                 Face rightExtend = new Face(dr, dr+extX, cr+extX, cr);
                 rightExtend.SetUVFront(length * uvScale, house.roofExtendX * uvScale);
-                faces.Add(rightExtend);
+                building.AddFace(rightExtend, house.materialGable);
                 dr = dr + extX;
                 cr = cr + extX;
                 extX = new Vector3(-house.roofExtendX, house.roofExtendX * m, 0);
                 Face leftExtend = new Face(br, br+extX, ar+extX, ar);
                 leftExtend.SetUVFront(length * uvScale, house.roofExtendX * uvScale);
-                faces.Add(leftExtend);
+                building.AddFace(leftExtend, house.materialGable);
                 br = br + extX;
                 ar = ar + extX;
             }
 
             Vector3 roofThickness = new Vector3(0, house.roofThickness, 0);
             List<Vector3> roofEdges = new List<Vector3> {ar, e1, dr, cr, e2, br, ar};
-            faces.AddRange(ExtrudeEdges(roofEdges, roofThickness, uvScale));
+            building.AddFaces(ExtrudeEdges(roofEdges, roofThickness, uvScale), house.materialGable);
 
             ar = ar + roofThickness;
             br = br + roofThickness;
@@ -173,31 +138,16 @@ public class HouseBuilderEditor : BaseBuilderEditor {
             e1 = e1 + roofThickness;
             e2 = e2 + roofThickness;
 
-            material = house.materialRoof;
-            if (material == null) {
-                material = new Material(Shader.Find("Standard"));
-            }
-            if (facesByMaterial.ContainsKey(material)) {
-                faces = facesByMaterial[material];
-            } else {
-                faces = new List<Face>();
-                facesByMaterial[material] = faces;
-            }
             uvScale = house.uvScaleRoof;
             Face leftRoof = new Face(br, e2, e1, ar);
             float halfSlope = Mathf.Sqrt(width/2 * width/2 + house.roofHeight * house.roofHeight);
             leftRoof.SetUVFront((length + 2 * house.roofExtendZ) * uvScale, halfSlope * uvScale);
-            faces.Add(leftRoof);
+            building.AddFace(leftRoof, house.materialRoof);
             Face rightRoof = new Face(dr, e1, e2, cr);
             rightRoof.SetUVFront((length + 2 * house.roofExtendZ) * uvScale, halfSlope * uvScale);
-            faces.Add(rightRoof);
+            building.AddFace(rightRoof, house.materialRoof);
         }
 
-        ClearMeshes(houseBuilder.gameObject);
-        foreach (KeyValuePair<Material, List<Face>> keyValue in facesByMaterial) {
-            Mesh mesh = BuildMesh(keyValue.Value);
-            mesh.name = "Generated House (" + keyValue.Key.name + ")";
-            AddMesh(houseBuilder.gameObject, mesh, keyValue.Key);
-        }
+        building.Build(houseBuilder.gameObject);
     }
 }
