@@ -48,5 +48,11 @@ public class HouseDefinition : ScriptableObject
     public float roofExtendZ;
     public float roofThickness;
 
-
+    public float totalHeight {
+        get {
+            float h = roofHeight;
+            foreach (BuildingStructure l in layers) { h+=l.height; }
+            return h;
+            }
+        }
 }
