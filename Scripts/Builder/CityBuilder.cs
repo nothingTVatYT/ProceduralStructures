@@ -15,7 +15,7 @@ namespace ProceduralStructures {
                 float streetLength = street.length;
 
                 for (int side = -1; side <= 1; side+=2) {
-                    float rightOffset = city.houseToHouse;
+                    float rightOffset = street.houseToHouse;
                     while (rightOffset < streetLength) {
                         GameObject prefab = RandomHouse(city);
                         HouseDefinition houseDefinition = prefab.GetComponent<HouseBuilder>().houseDefinition;
@@ -23,9 +23,9 @@ namespace ProceduralStructures {
                         float segmentStart = 0;
                         Vector3[] segment = GetStreetSegmentAt(street, rightOffset, out segmentStart);
                         Vector3 normal = GetStreetNormalAt(segment);
-                        Vector3 pos = segment[0] + normal * (houseDefinition.length/2 + city.doorToStreet) * side
+                        Vector3 pos = segment[0] + normal * (houseDefinition.length/2 + street.doorToStreet) * side
                             + (segment[1]-segment[0]).normalized * (houseDefinition.width/2 + rightOffset - segmentStart);
-                        rightOffset += city.houseToHouse + houseDefinition.width;
+                        rightOffset += street.houseToHouse + houseDefinition.width;
                         if (rightOffset > streetLength) {
                             break;
                         }
