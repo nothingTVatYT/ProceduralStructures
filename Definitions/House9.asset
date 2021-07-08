@@ -34,7 +34,7 @@ MonoBehaviour:
       side: 0
       dimension:
         serializedVersion: 2
-        x: 7
+        x: 3.5
         y: 0.2
         width: 1.2
         height: 2.4
