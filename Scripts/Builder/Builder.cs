@@ -30,7 +30,7 @@ namespace ProceduralStructures {
             // check which faces are affected
             foreach (Face face in fromFaces) {
                 // is the normal of this face already pointing to us?
-                Debug.Log(face.normal);
+                //Debug.Log(face.normal);
                 // project the 2D rect on this face (the normal needs to point to Vector3.back)
                 Face cutoutFace = ProjectRectOnFrontFace(dim, face.a.z);
                 // is the cutout part of this face?

@@ -1,0 +1,51 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: dd511a36ed4483a51873f1885d21573b, type: 3}
+  m_Name: House6
+  m_EditorClassIdentifier: 
+  heightOffset: -2
+  width: 3
+  length: 6
+  layers:
+  - name: Basement
+    height: 2
+    slopeX: 0
+    slopeZ: 0
+    material: {fileID: 2100000, guid: 9e2aae7ee83e19d468a3f2d21f2fe4ae, type: 2}
+    uvScale: 1
+    cutouts: []
+  - name: Ground Floor
+    height: 2.5
+    slopeX: 0
+    slopeZ: 0
+    material: {fileID: 2100000, guid: ef3aeaa0049cbe447969df3bee614da1, type: 2}
+    uvScale: 1
+    cutouts:
+    - name: Door
+      side: 0
+      dimension:
+        serializedVersion: 2
+        x: 2
+        y: 0.2
+        width: 1
+        height: 2.2
+      material: {fileID: 2100000, guid: dafe3ff78cecef3449c7897b8575e23e, type: 2}
+      uvScale: 0.5
+  roofHeight: 2
+  gableWidth: 1
+  materialRoof: {fileID: 2100000, guid: 1b74884212c29f24c9e3e557378c899f, type: 2}
+  uvScaleRoof: 0.5
+  materialGable: {fileID: 2100000, guid: ef3aeaa0049cbe447969df3bee614da1, type: 2}
+  uvScaleGable: 1
+  roofExtendX: 0.5
+  roofExtendZ: 0.5
+  roofThickness: 0.1
