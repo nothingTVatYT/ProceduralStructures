@@ -29,8 +29,15 @@ namespace ProceduralStructures {
             List<Face> result = new List<Face>();
             // check which faces are affected
             foreach (Face face in fromFaces) {
+                List<Face> n = new List<Face>();
                 // is the normal of this face already pointing to us?
-                //Debug.Log(face.normal);
+                Quaternion rotation = Quaternion.identity;
+                if (face.normal.normalized != Vector3.back) {
+                    Vector3 originalDirection = face.normal.normalized;
+                    rotation = Quaternion.FromToRotation(face.normal.normalized, Vector3.back);
+                    face.Rotate(rotation);
+                    rotation = Quaternion.FromToRotation(Vector3.back, originalDirection);
+                }
                 // project the 2D rect on this face (the normal needs to point to Vector3.back)
                 Face cutoutFace = ProjectRectOnFrontFace(dim, face.a.z);
                 // is the cutout part of this face?
@@ -44,23 +51,27 @@ namespace ProceduralStructures {
                     Face rightColumn = nf2[1];
                     
                     nf = SliceFace(leftColumn, 0, cutoutFace.a.y - leftColumn.a.y);
-                    result.Add(nf[0]); // bottom left corner
+                    n.Add(nf[0]); // bottom left corner
                     nf2 = SliceFace(nf[1], 0, cutoutFace.b.y-nf[1].a.y);
-                    result.Add(nf2[1]); // top left corner
-                    result.Add(nf2[0]); // left middle
+                    n.Add(nf2[1]); // top left corner
+                    n.Add(nf2[0]); // left middle
 
                     nf = SliceFace(middleColumn, 0, cutoutFace.a.y - middleColumn.a.y);
-                    result.Add(nf[0]); // bottom center
+                    n.Add(nf[0]); // bottom center
                     nf2 = SliceFace(nf[1], 0, cutoutFace.b.y - nf[1].a.y);
                     //result.Add(nf2[0]); // center
                     nf2[0].Tag(CUTOUT);
-                    result.AddRange(IndentFace(nf2[0], new Vector3(0, 0, 0.3f), uvScale));
-                    result.Add(nf2[1]); // top center
+                    n.AddRange(IndentFace(nf2[0], new Vector3(0, 0, 0.3f), uvScale));
+                    n.Add(nf2[1]); // top center
                     nf = SliceFace(rightColumn, 0, cutoutFace.a.y-rightColumn.a.y);
-                    result.Add(nf[0]); // bottom right corner
+                    n.Add(nf[0]); // bottom right corner
                     nf2 = SliceFace(nf[1], 0, cutoutFace.b.y-nf[1].a.y);
-                    result.Add(nf2[0]); // right middle
-                    result.Add(nf2[1]); // top right corner
+                    n.Add(nf2[0]); // right middle
+                    n.Add(nf2[1]); // top right corner
+                    foreach (Face turned in n) {
+                        turned.Rotate(rotation);
+                    }
+                    result.AddRange(n);
                 } else {
                     result.Add(face);
                 }

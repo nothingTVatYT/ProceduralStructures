@@ -12,7 +12,10 @@ namespace ProceduralStructures {
             float length = house.length;
             foreach (HouseDefinition.BuildingStructure bs in house.layers) {
                 float height = bs.height;
-                List<Face> layerFaces = new List<Face>();
+                List<Face> frontFaces = new List<Face>();
+                List<Face> backFaces = new List<Face>();
+                List<Face> leftFaces = new List<Face>();
+                List<Face> rightFaces = new List<Face>();
                 Vector3 a = center + new Vector3(-width/2, 0, -length/2);
                 Vector3 b = center + new Vector3(-width/2, 0, length/2);
                 Vector3 c = center + new Vector3(width/2, 0, length/2);
@@ -23,40 +26,52 @@ namespace ProceduralStructures {
                 Vector3 d1 = d + new Vector3(-bs.slopeX*height, height, bs.slopeZ*height);
                 Face frontface = new Face(a, a1, d1, d);
                 frontface.SetUVFront(width * bs.uvScale, height * bs.uvScale);
-                bool cutoutFound = false;
-                foreach (HouseDefinition.WallCutout co in bs.cutouts) {
-                    if (co.side == HouseDefinition.Side.Front) {
-                        Rect relativeRect = new Rect(frontface.a.x + co.dimension.x, frontface.a.y + co.dimension.y, co.dimension.width, co.dimension.height);
-                        List<Face> sliced = Builder.Cutout(new List<Face> {frontface}, relativeRect, bs.uvScale);
-                        if (co.material != bs.material) {
-                            Face doorFace = Builder.FindFirstFaceByTag(sliced, Builder.CUTOUT);
-                            if (doorFace != null) {
-                                doorFace.SetUVFront(co.dimension.width * co.uvScale, co.dimension.height * co.uvScale);
-                                building.AddFace(doorFace, co.material);
-                                sliced.Remove(doorFace);
-                            }
-                        }
-                        cutoutFound = true;
-                        layerFaces.AddRange(sliced);
-                        break; // allow only one slicing for now
-                    }
-                }
-                if (!cutoutFound) {
-                    layerFaces.Add(frontface);
-                }
+                frontFaces.Add(frontface);
                 Face rightFace = new Face(d, d1, c1, c);
                 rightFace.SetUVFront(length * bs.uvScale, height * bs.uvScale);
-                layerFaces.Add(rightFace);
+                rightFaces.Add(rightFace);
                 Face backFace = new Face(c, c1, b1, b);
                 backFace.SetUVFront(width * bs.uvScale, height * bs.uvScale);
-                layerFaces.Add(backFace);
+                backFaces.Add(backFace);
                 Face leftFace = new Face(b, b1, a1, a);
                 leftFace.SetUVFront(length * bs.uvScale, height * bs.uvScale);
-                layerFaces.Add(leftFace);
+                leftFaces.Add(leftFace);
                 width -= 2*bs.slopeX*height;
                 length -= 2*bs.slopeZ*height;
 
-                building.AddFaces(layerFaces, bs.material);
+                // handle doors/windows and alike
+                foreach (HouseDefinition.WallCutout co in bs.cutouts) {
+                    List<Face> side = frontFaces; // assign something to make the compiler happy
+                    switch (co.side) {
+                        case HouseDefinition.Side.Front: side = frontFaces; break;
+                        case HouseDefinition.Side.Back: side = backFaces; break;
+                        case HouseDefinition.Side.Right: side = rightFaces; break;
+                        case HouseDefinition.Side.Left: side = leftFaces; break;
+                    }
+                    Face projectionTarget = side[0].DeepCopy();
+                    Quaternion rotation = Quaternion.identity;
+                    Vector3 originalDirection = projectionTarget.normal.normalized;
+                    rotation = Quaternion.FromToRotation(projectionTarget.normal.normalized, Vector3.back);
+                    projectionTarget.Rotate(rotation);
+                    Rect relativeRect = new Rect(projectionTarget.a.x + co.dimension.x, projectionTarget.a.y + co.dimension.y, co.dimension.width, co.dimension.height);
+                    List<Face> sliced = Builder.Cutout(side, relativeRect, bs.uvScale);
+                    if (co.material != bs.material) {
+                        Face doorFace = Builder.FindFirstFaceByTag(sliced, Builder.CUTOUT);
+                        if (doorFace != null) {
+                            doorFace.SetUVFront(co.dimension.width * co.uvScale, co.dimension.height * co.uvScale);
+                            building.AddFace(doorFace, co.material);
+                            sliced.Remove(doorFace);
+                        }
+                    }
+                    side.Clear();
+                    side.AddRange(sliced);
+                }
+
+                building.AddFaces(frontFaces, bs.material);
+                building.AddFaces(backFaces, bs.material);
+                building.AddFaces(rightFaces, bs.material);
+                building.AddFaces(leftFaces, bs.material);
+
                 center += new Vector3(0, height, 0);
             }
             if (house.roofHeight > 0) {

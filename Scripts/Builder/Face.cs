@@ -30,6 +30,31 @@ namespace ProceduralStructures {
         public Vector3[] GetVerticesCCW() {
             return new Vector3[] { a, d, c, b };
         }
+
+        public Face DeepCopy() {
+            Face n = new Face();
+            n.a = a;
+            n.b = b;
+            n.c = c;
+            n.d = d;
+            n.isTriangle = isTriangle;
+            n.uvA = uvA;
+            n.uvB = uvB;
+            n.uvC = uvC;
+            n.uvD = uvD;
+            n.tags = tags;
+            return n;
+        }
+
+        public Face Rotate(Quaternion rot) {
+            a = rot * a;
+            b = rot * b;
+            c = rot * c;
+            if (!isTriangle) {
+                d = rot * d;
+            }
+            return this;
+        }
         public override string ToString() {
             return "F(" + a +"," + b + "," + c + "," + d + ")";
         }
