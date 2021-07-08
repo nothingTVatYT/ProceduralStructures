@@ -10,41 +10,41 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: dd511a36ed4483a51873f1885d21573b, type: 3}
-  m_Name: House5
+  m_Name: House11
   m_EditorClassIdentifier: 
   heightOffset: -2
-  width: 6
-  length: 6
+  width: 7.5
+  length: 7
   layers:
   - name: Basement
-    height: 2
+    height: 3
     slopeX: 0.1
     slopeZ: 0.1
-    material: {fileID: 2100000, guid: 9e2aae7ee83e19d468a3f2d21f2fe4ae, type: 2}
+    material: {fileID: 2100000, guid: c4cb26c1001fa28bd967dc39ef90d9b3, type: 2}
     uvScale: 1
     cutouts: []
   - name: Ground Floor
     height: 3
     slopeX: 0
     slopeZ: 0
-    material: {fileID: 2100000, guid: ef3aeaa0049cbe447969df3bee614da1, type: 2}
+    material: {fileID: 2100000, guid: c4cb26c1001fa28bd967dc39ef90d9b3, type: 2}
     uvScale: 1
     cutouts:
     - name: Door
       side: 0
       dimension:
         serializedVersion: 2
-        x: 4.72
+        x: 1.79
         y: 0.2
         width: 1
         height: 2.4
       material: {fileID: 2100000, guid: dafe3ff78cecef3449c7897b8575e23e, type: 2}
-      uvScale: 0.5
-  roofHeight: 3
+      uvScale: 1
+  roofHeight: 1.8
   gableWidth: 1
-  materialRoof: {fileID: 2100000, guid: 1b74884212c29f24c9e3e557378c899f, type: 2}
+  materialRoof: {fileID: 2100000, guid: 853a2e619f9b220138240254c3fce870, type: 2}
   uvScaleRoof: 0.5
-  materialGable: {fileID: 2100000, guid: ef3aeaa0049cbe447969df3bee614da1, type: 2}
+  materialGable: {fileID: 2100000, guid: 1cac97f7b3db6c0c483beda31a545460, type: 2}
   uvScaleGable: 1
   roofExtendX: 0.5
   roofExtendZ: 0.5
