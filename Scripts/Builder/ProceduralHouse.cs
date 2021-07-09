@@ -37,7 +37,7 @@ namespace ProceduralStructures {
                 backFace.SetUVFront(width * bs.uvScale, height * bs.uvScale);
                 BuildingObject backWall = new BuildingObject();
                 backWall.AddFace(backFace);
-                backWall.TransformFaces(-c, Quaternion.FromToRotation(Vector3.forward, Vector3.back));
+                backWall.TransformFaces(-c, Quaternion.AngleAxis(180, Vector3.up));
 
                 Face leftFace = new Face(b, b1, a1, a);
                 leftFace.SetUVFront(length * bs.uvScale, height * bs.uvScale);
@@ -68,6 +68,8 @@ namespace ProceduralStructures {
                             doorFace.SetUVFront(co.dimension.width * co.uvScale, co.dimension.height * co.uvScale);
                             building.AddFace(doorFace, co.material);
                             wall.faces.Remove(doorFace);
+                        } else {
+                            Debug.Log(co.name + ": CutFront didn't leave a cutout face " + co.dimension + " " + wall.faces[0]);
                         }
                     }
                 }
