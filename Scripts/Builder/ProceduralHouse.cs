@@ -12,10 +12,6 @@ namespace ProceduralStructures {
             float length = house.length;
             foreach (HouseDefinition.BuildingStructure bs in house.layers) {
                 float height = bs.height;
-                List<Face> frontFaces = new List<Face>();
-                List<Face> backFaces = new List<Face>();
-                List<Face> leftFaces = new List<Face>();
-                List<Face> rightFaces = new List<Face>();
                 Vector3 a = center + new Vector3(-width/2, 0, -length/2);
                 Vector3 b = center + new Vector3(-width/2, 0, length/2);
                 Vector3 c = center + new Vector3(width/2, 0, length/2);
@@ -24,53 +20,62 @@ namespace ProceduralStructures {
                 Vector3 b1 = b + new Vector3(bs.slopeX*height, height, -bs.slopeZ*height);
                 Vector3 c1 = c + new Vector3(-bs.slopeX*height, height, -bs.slopeZ*height);
                 Vector3 d1 = d + new Vector3(-bs.slopeX*height, height, bs.slopeZ*height);
+
                 Face frontface = new Face(a, a1, d1, d);
                 frontface.SetUVFront(width * bs.uvScale, height * bs.uvScale);
-                frontFaces.Add(frontface);
+                BuildingObject frontWall = new BuildingObject();
+                frontWall.AddFace(frontface);
+                frontWall.TranslateFaces(-a);
+
                 Face rightFace = new Face(d, d1, c1, c);
                 rightFace.SetUVFront(length * bs.uvScale, height * bs.uvScale);
-                rightFaces.Add(rightFace);
                 BuildingObject rightWall = new BuildingObject();
-                rightWall.faces.Add(rightFace);
-                rightWall.position = d;
+                rightWall.AddFace(rightFace);
+                rightWall.TransformFaces(-d, Quaternion.FromToRotation(Vector3.right, Vector3.back));
+
                 Face backFace = new Face(c, c1, b1, b);
                 backFace.SetUVFront(width * bs.uvScale, height * bs.uvScale);
-                backFaces.Add(backFace);
+                BuildingObject backWall = new BuildingObject();
+                backWall.AddFace(backFace);
+                backWall.TransformFaces(-c, Quaternion.FromToRotation(Vector3.forward, Vector3.back));
+
                 Face leftFace = new Face(b, b1, a1, a);
                 leftFace.SetUVFront(length * bs.uvScale, height * bs.uvScale);
-                leftFaces.Add(leftFace);
+                BuildingObject leftWall = new BuildingObject();
+                leftWall.AddFace(leftFace);
+                leftWall.TransformFaces(-b, Quaternion.FromToRotation(Vector3.left, Vector3.back));
+
                 width -= 2*bs.slopeX*height;
                 length -= 2*bs.slopeZ*height;
 
                 // doors and windows are defined with x,y,width and height relative to the lower left
                 // corner of the face
-                Vector3 cutoutOrigin = a;
+
                 // handle doors/windows and alike
                 foreach (HouseDefinition.WallCutout co in bs.cutouts) {
-                    List<Face> side = frontFaces; // assign something to make the compiler happy
+                    BuildingObject wall = null;
                     switch (co.side) {
-                        case HouseDefinition.Side.Front: side = frontFaces; break;
-                        case HouseDefinition.Side.Back: side = backFaces; cutoutOrigin = c; break;
-                        case HouseDefinition.Side.Right: side = rightFaces; cutoutOrigin = d; break;
-                        case HouseDefinition.Side.Left: side = leftFaces; cutoutOrigin = b; break;
+                        case HouseDefinition.Side.Front: wall = frontWall; break;
+                        case HouseDefinition.Side.Back: wall = backWall; break;
+                        case HouseDefinition.Side.Right: wall = rightWall; break;
+                        case HouseDefinition.Side.Left: wall = leftWall; break;
                     }
-                    List<Face> sliced = Builder.Cutout(side, co.dimension, cutoutOrigin, bs.uvScale);
+                    wall.CutFront(co.dimension, bs.uvScale);
                     if (co.material != bs.material) {
-                        Face doorFace = Builder.FindFirstFaceByTag(sliced, Builder.CUTOUT);
+                        Face doorFace = Builder.FindFirstFaceByTag(wall.faces, Builder.CUTOUT);
                         if (doorFace != null) {
+                            wall.LocalToWorld(doorFace);
                             doorFace.SetUVFront(co.dimension.width * co.uvScale, co.dimension.height * co.uvScale);
                             building.AddFace(doorFace, co.material);
-                            sliced.Remove(doorFace);
+                            wall.faces.Remove(doorFace);
                         }
                     }
-                    side.Clear();
-                    side.AddRange(sliced);
                 }
 
-                building.AddFaces(frontFaces, bs.material);
-                building.AddFaces(backFaces, bs.material);
-                building.AddFaces(rightFaces, bs.material);
-                building.AddFaces(leftFaces, bs.material);
+                building.AddObject(frontWall, bs.material);
+                building.AddObject(backWall, bs.material);
+                building.AddObject(rightWall, bs.material);
+                building.AddObject(leftWall, bs.material);
 
                 center += new Vector3(0, height, 0);
             }

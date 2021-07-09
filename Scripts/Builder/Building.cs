@@ -28,6 +28,11 @@ namespace ProceduralStructures {
             GetFacesByMaterial(material).AddRange(faces);
         }
 
+        public void AddObject(BuildingObject child, Material material) {
+            child.ResetTransform();
+            GetFacesByMaterial(material).AddRange(child.faces);
+        }
+
         public void Build(GameObject target) {
             ClearMeshes(target);
             foreach (KeyValuePair<Material, List<Face>> keyValue in facesByMaterial) {
