@@ -19,6 +19,15 @@ namespace ProceduralStructures {
             this.c = c;
             isTriangle = true;
         }
+
+        public static Face CreateXZPlane(float width, float length) {
+            return new Face(
+                new Vector3(-width/2, 0, -length/2),
+                new Vector3(-width/2, 0, length/2),
+                new Vector3(width/2, 0, length/2),
+                new Vector3(width/2, 0, -length/2));
+        }
+
         public Vector3 a,b,c,d;
         public Vector2 uvA,uvB,uvC,uvD;
         public Vector3 normal { get { return Vector3.Cross(b-a, d-a);} }

@@ -22,6 +22,11 @@ namespace ProceduralStructures {
             return this;
         }
 
+        public BuildingObject AddFaces(List<Face> newFaces) {
+            faces.AddRange(newFaces);
+            return this;
+        }
+
         public Face LocalToWorld(Face face) {
             face.Rotate(Quaternion.Inverse(rotation)).MoveFaceBy(-position);
             return face;
@@ -32,6 +37,11 @@ namespace ProceduralStructures {
                 face.MoveFaceBy(translation);
             }
             this.position += translation;
+            return this;
+        }
+
+        public BuildingObject TranslatePosition(Vector3 translation) {
+            this.position -= Quaternion.Inverse(rotation) * translation;
             return this;
         }
 

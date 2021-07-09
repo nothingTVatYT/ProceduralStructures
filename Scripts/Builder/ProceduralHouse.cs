@@ -74,6 +74,58 @@ namespace ProceduralStructures {
                     }
                 }
 
+                // add stairs
+                if (bs.stairs != null) {
+                    foreach (HouseDefinition.Stairs stairs in bs.stairs) {
+                        BuildingObject wall = frontWall;
+                        switch (stairs.side)
+                        {
+                            case HouseDefinition.Side.Front:
+                                wall = frontWall;
+                                break;
+                            case HouseDefinition.Side.Back:
+                                wall = backWall;
+                                break;
+                            case HouseDefinition.Side.Right:
+                                wall = rightWall;
+                                break;
+                            case HouseDefinition.Side.Left:
+                                wall = leftWall;
+                                break;
+                        }
+                        int nSteps = (int)Mathf.Ceil(stairs.totalHeight / stairs.stepHeight);
+                        Face floor = Face.CreateXZPlane(stairs.baseWidth,stairs.baseLength);
+                        floor.SetUVFront(stairs.baseWidth * stairs.uvScale, stairs.baseLength * stairs.uvScale);
+                        BuildingObject stairsBlock = new BuildingObject();
+                        stairsBlock.position = wall.position;
+                        stairsBlock.rotation = wall.rotation;
+                        stairsBlock.AddFace(floor);
+                        Vector3 dn = Vector3.down * stairs.stepHeight;
+                        Vector3 ou = Vector3.back * stairs.stepDepth;
+                        float currentHeight = 0;
+                        Vector3 stepC = floor.c;
+                        Vector3 stepD = floor.d;
+                        Vector3 stepA = floor.a;
+                        Vector3 stepB = floor.b;
+                        while (currentHeight < stairs.totalHeight) {
+                            // extrude down
+                            stairsBlock.AddFaces(Builder.ExtrudeEdges(new List<Vector3> {stepC, stepD, stepA, stepB}, dn, stairs.uvScale));
+                            stepC += dn;
+                            stepD += dn;
+                            stepA += dn;
+                            stepB += dn;
+                            currentHeight += stairs.stepHeight;
+                            if (currentHeight >= stairs.totalHeight) break;
+                            // extrude step
+                            stairsBlock.AddFaces(Builder.ExtrudeEdges(new List<Vector3> {stepD, stepA}, ou, stairs.uvScale));
+                            stepD += ou;
+                            stepA += ou;
+                        }
+
+                        stairsBlock.TranslatePosition(new Vector3(stairs.baseWidth/2 + stairs.offset, stairs.baseHeight, -stairs.baseLength/2));
+                        building.AddObject(stairsBlock, stairs.material);
+                    }
+                }
                 building.AddObject(frontWall, bs.material);
                 building.AddObject(backWall, bs.material);
                 building.AddObject(rightWall, bs.material);

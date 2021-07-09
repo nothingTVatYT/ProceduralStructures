@@ -18,6 +18,21 @@ public class HouseDefinition : ScriptableObject
     }
 
     [Serializable]
+    public class Stairs {
+        public Side side = Side.Front;
+        public float offset = 0;
+        public float baseWidth = 1;
+        public float baseLength = 0.6f;
+        public float baseHeight = 0;
+        public float descentAngle = 0f;
+        public float totalHeight;
+        public float stepHeight = 0.25f;
+        public float stepDepth = 0.4f;
+        public Material material;
+        public float uvScale;
+    }
+
+    [Serializable]
     public class BuildingStructure {
         public string name;
         public float height;
@@ -28,6 +43,7 @@ public class HouseDefinition : ScriptableObject
         public Material material;
         public float uvScale = 1;
         public WallCutout[] cutouts;
+        public Stairs[] stairs;
     }
 
     [Header("Basement Settings")]

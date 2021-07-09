@@ -135,6 +135,10 @@ namespace ProceduralStructures {
             return faces;
         }
 
+        public static List<Face> ExtrudeEdges(Face face, Vector3 direction, float uvScale = 1f) {
+            return ExtrudeEdges(new List<Vector3> {face.a, face.b, face.c, face.d, face.a}, direction, uvScale);
+        }
+
         /* Other than in Unity 2D this rect defines positive y up */
         public static Face ProjectRectOnFrontFace(Rect rect, float z) {
             Vector3 a = new Vector3(rect.x, rect.y, z);
