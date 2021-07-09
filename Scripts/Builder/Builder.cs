@@ -25,21 +25,24 @@ namespace ProceduralStructures {
             return faces;
         }
 
-        public static List<Face> Cutout(List<Face> fromFaces, Rect dim, float uvScale) {
+        public static List<Face> Cutout(List<Face> fromFaces, Rect dim, Vector3 cutoutOrigin, float uvScale) {
             List<Face> result = new List<Face>();
+            // project the 2D rect on this face (the normal needs to point to Vector3.back)
+            // the z is not used so we don't care
             // check which faces are affected
+            Quaternion localToWorld = Quaternion.identity;
             foreach (Face face in fromFaces) {
                 List<Face> n = new List<Face>();
                 // is the normal of this face already pointing to us?
                 Quaternion rotation = Quaternion.identity;
                 if (face.normal.normalized != Vector3.back) {
                     Vector3 originalDirection = face.normal.normalized;
-                    rotation = Quaternion.FromToRotation(face.normal.normalized, Vector3.back);
+                    rotation = Quaternion.FromToRotation(originalDirection, Vector3.back);
                     face.Rotate(rotation);
-                    rotation = Quaternion.FromToRotation(Vector3.back, originalDirection);
+                    localToWorld = Quaternion.FromToRotation(Vector3.back, originalDirection);
                 }
-                // project the 2D rect on this face (the normal needs to point to Vector3.back)
-                Face cutoutFace = ProjectRectOnFrontFace(dim, face.a.z);
+                Vector3 localOrigin = rotation * cutoutOrigin;
+                Face cutoutFace = ProjectRectOnFrontFace(dim, 0).MoveFaceBy(localOrigin);
                 // is the cutout part of this face?
                 if (cutoutFace.a.x >= face.a.x && cutoutFace.a.y >= face.a.y && cutoutFace.c.x <= face.c.x && cutoutFace.c.y <= face.c.y) {
                     // slice the face into 9 parts leaving the center piece at the size of the cutout
@@ -69,10 +72,13 @@ namespace ProceduralStructures {
                     n.Add(nf2[0]); // right middle
                     n.Add(nf2[1]); // top right corner
                     foreach (Face turned in n) {
-                        turned.Rotate(rotation);
+                        turned.Rotate(localToWorld);
                     }
                     result.AddRange(n);
                 } else {
+                    Debug.Log("cutout is not part of this face. cutout=" + cutoutFace + ", face=" + face);
+                    // rotate it back
+                    face.Rotate(localToWorld);
                     result.Add(face);
                 }
             }

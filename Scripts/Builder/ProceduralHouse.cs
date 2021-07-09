@@ -30,6 +30,9 @@ namespace ProceduralStructures {
                 Face rightFace = new Face(d, d1, c1, c);
                 rightFace.SetUVFront(length * bs.uvScale, height * bs.uvScale);
                 rightFaces.Add(rightFace);
+                BuildingObject rightWall = new BuildingObject();
+                rightWall.faces.Add(rightFace);
+                rightWall.position = d;
                 Face backFace = new Face(c, c1, b1, b);
                 backFace.SetUVFront(width * bs.uvScale, height * bs.uvScale);
                 backFaces.Add(backFace);
@@ -39,22 +42,19 @@ namespace ProceduralStructures {
                 width -= 2*bs.slopeX*height;
                 length -= 2*bs.slopeZ*height;
 
+                // doors and windows are defined with x,y,width and height relative to the lower left
+                // corner of the face
+                Vector3 cutoutOrigin = a;
                 // handle doors/windows and alike
                 foreach (HouseDefinition.WallCutout co in bs.cutouts) {
                     List<Face> side = frontFaces; // assign something to make the compiler happy
                     switch (co.side) {
                         case HouseDefinition.Side.Front: side = frontFaces; break;
-                        case HouseDefinition.Side.Back: side = backFaces; break;
-                        case HouseDefinition.Side.Right: side = rightFaces; break;
-                        case HouseDefinition.Side.Left: side = leftFaces; break;
+                        case HouseDefinition.Side.Back: side = backFaces; cutoutOrigin = c; break;
+                        case HouseDefinition.Side.Right: side = rightFaces; cutoutOrigin = d; break;
+                        case HouseDefinition.Side.Left: side = leftFaces; cutoutOrigin = b; break;
                     }
-                    Face projectionTarget = side[0].DeepCopy();
-                    Quaternion rotation = Quaternion.identity;
-                    Vector3 originalDirection = projectionTarget.normal.normalized;
-                    rotation = Quaternion.FromToRotation(projectionTarget.normal.normalized, Vector3.back);
-                    projectionTarget.Rotate(rotation);
-                    Rect relativeRect = new Rect(projectionTarget.a.x + co.dimension.x, projectionTarget.a.y + co.dimension.y, co.dimension.width, co.dimension.height);
-                    List<Face> sliced = Builder.Cutout(side, relativeRect, bs.uvScale);
+                    List<Face> sliced = Builder.Cutout(side, co.dimension, cutoutOrigin, bs.uvScale);
                     if (co.material != bs.material) {
                         Face doorFace = Builder.FindFirstFaceByTag(sliced, Builder.CUTOUT);
                         if (doorFace != null) {
