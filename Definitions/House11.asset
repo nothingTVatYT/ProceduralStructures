@@ -23,6 +23,7 @@ MonoBehaviour:
     material: {fileID: 2100000, guid: c4cb26c1001fa28bd967dc39ef90d9b3, type: 2}
     uvScale: 0.5
     cutouts: []
+    stairs: []
   - name: Ground Floor
     height: 3
     slopeX: 0
@@ -80,6 +81,29 @@ MonoBehaviour:
         height: 2.4
       material: {fileID: 2100000, guid: dafe3ff78cecef3449c7897b8575e23e, type: 2}
       uvScale: 1
+    stairs:
+    - side: 0
+      offset: 1.29
+      baseWidth: 2
+      baseLength: 0.6
+      baseHeight: -0.1
+      descentAngle: 0
+      totalHeight: 2
+      stepHeight: 0.25
+      stepDepth: 0.4
+      material: {fileID: 2100000, guid: c4cb26c1001fa28bd967dc39ef90d9b3, type: 2}
+      uvScale: 0.5
+    - side: 3
+      offset: 2
+      baseWidth: 2
+      baseLength: 0.6
+      baseHeight: 2
+      descentAngle: 0
+      totalHeight: 2
+      stepHeight: 0.25
+      stepDepth: 0.4
+      material: {fileID: 2100000, guid: c4cb26c1001fa28bd967dc39ef90d9b3, type: 2}
+      uvScale: 0.5
   roofHeight: 1.8
   gableWidth: 1
   materialRoof: {fileID: 2100000, guid: 853a2e619f9b220138240254c3fce870, type: 2}
