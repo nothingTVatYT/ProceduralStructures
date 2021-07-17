@@ -17,12 +17,13 @@ MonoBehaviour:
   length: 5
   layers:
   - name: Basement
-    height: 2
+    height: 2.2
     slopeX: 0.1
     slopeZ: 0.1
     material: {fileID: 2100000, guid: 9e2aae7ee83e19d468a3f2d21f2fe4ae, type: 2}
     uvScale: 1
     cutouts: []
+    stairs: []
   - name: Ground Floor
     height: 3
     slopeX: 0
@@ -40,6 +41,7 @@ MonoBehaviour:
         height: 2.4
       material: {fileID: 2100000, guid: dafe3ff78cecef3449c7897b8575e23e, type: 2}
       uvScale: 0.5
+    stairs: []
   roofHeight: 3
   gableWidth: 1
   materialRoof: {fileID: 2100000, guid: 1b74884212c29f24c9e3e557378c899f, type: 2}

@@ -29,7 +29,8 @@ namespace ProceduralStructures {
                         if (rightOffset > streetLength) {
                             break;
                         }
-                        pos.y = Terrain.activeTerrain.SampleHeight(pos);
+                        Vector3 frontCenter = pos - normal * houseDefinition.length/2 * side;
+                        pos.y = Terrain.activeTerrain.SampleHeight(frontCenter);
                         GameObject marker1 = GameObject.Instantiate(prefab);
                         generated.Add(marker1);
                         marker1.transform.parent = city.parent.transform;

@@ -17,7 +17,7 @@ MonoBehaviour:
   length: 7
   layers:
   - name: Basement
-    height: 2
+    height: 2.3
     slopeX: 0
     slopeZ: 0
     material: {fileID: 2100000, guid: c4cb26c1001fa28bd967dc39ef90d9b3, type: 2}
@@ -87,17 +87,6 @@ MonoBehaviour:
       baseWidth: 2
       baseLength: 0.6
       baseHeight: -0.1
-      descentAngle: 0
-      totalHeight: 2
-      stepHeight: 0.25
-      stepDepth: 0.4
-      material: {fileID: 2100000, guid: c4cb26c1001fa28bd967dc39ef90d9b3, type: 2}
-      uvScale: 0.5
-    - side: 3
-      offset: 2
-      baseWidth: 2
-      baseLength: 0.6
-      baseHeight: 2
       descentAngle: 0
       totalHeight: 2
       stepHeight: 0.25
