@@ -76,6 +76,16 @@ namespace ProceduralStructures {
             }
         }
 
+        public static GameObject GetChildByName(GameObject parent, string name) {
+            for (int i = 0; i < parent.transform.childCount; i++) {
+                GameObject child = parent.transform.GetChild(i).gameObject;
+                if (child.name == name) {
+                    return child;
+                }
+            }
+            return null;
+        }
+        
         protected Mesh BuildMesh(List<Face> faces) {
             Mesh mesh = new Mesh();
             int triangles;

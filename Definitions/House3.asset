@@ -62,7 +62,7 @@ MonoBehaviour:
   - name: Second Floor
     height: 3
     hollow: 1
-    addCeiling: 1
+    addCeiling: 0
     wallThickness: 0.3
     slopeX: 0
     slopeZ: 0

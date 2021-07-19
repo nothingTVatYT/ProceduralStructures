@@ -67,8 +67,8 @@ namespace ProceduralStructures {
 
         public Face InvertNormals() {
             if (isTriangle) {
-                Vector3 t = b;
-                b = c;
+                Vector3 t = a;
+                a = c;
                 c = t;
             } else {
                 Vector3 t = b;

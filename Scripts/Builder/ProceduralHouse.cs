@@ -215,15 +215,18 @@ namespace ProceduralStructures {
             building.Build(target);
         }
 
-        public void RebuildHouseWithInterior(HouseDefinition house, GameObject target) {
+        public void RebuildHouseWithInterior(HouseDefinition house, GameObject target, int lod) {
             Vector3 center = new Vector3(0, house.heightOffset, 0);
             float width = house.width;
             float length = house.length;
             Building building = new Building();
+            bool lastLayerIsHollow = false;
+            float lastWallThickness = 0;
 
             foreach (HouseDefinition.BuildingStructure bs in house.layers) {
                 float height = bs.height;
                 float wallThickness = bs.wallThickness;
+                lastWallThickness = wallThickness;
                 BuildingObject layer = new BuildingObject();
                 Vector3 a = center + new Vector3(-width/2, 0, -length/2);
                 Vector3 b = center + new Vector3(-width/2, 0, length/2);
@@ -234,7 +237,8 @@ namespace ProceduralStructures {
                 Vector3 c1 = c + new Vector3(-bs.slopeX*height, height, -bs.slopeZ*height);
                 Vector3 d1 = d + new Vector3(-bs.slopeX*height, height, bs.slopeZ*height);
 
-                if (bs.hollow) {
+                if (bs.hollow && lod==0) {
+                    lastLayerIsHollow = true;
                     Vector3 ai = a + new Vector3(wallThickness, 0, wallThickness);
                     Vector3 bi = b + new Vector3(wallThickness, 0, -wallThickness);
                     Vector3 ci = c + new Vector3(-wallThickness, 0, -wallThickness);
@@ -262,15 +266,128 @@ namespace ProceduralStructures {
                         layer.MakeHole(origin, direction, co.dimension.width, co.dimension.height);
                     }
                 } else {
+                    lastLayerIsHollow = false;
                     layer.AddFaces(Builder.ExtrudeEdges(new List<Vector3> {a, d, c, b, a}, Vector3.up * height, bs.uvScale));
                     foreach (HouseDefinition.WallCutout co in bs.cutouts) {
-                        layer.CutFront(co.dimension, bs.uvScale);
+                        //layer.CutFront(co.dimension, bs.uvScale);
+                        Vector3 origin = center + new Vector3(co.dimension.x + co.dimension.width/2, co.dimension.y + co.dimension.height/2, 0);
+                        Vector3 direction = Vector3.back;
+                        switch(co.side) {
+                            case HouseDefinition.Side.Right: direction = Vector3.right; break;
+                            case HouseDefinition.Side.Left: direction = Vector3.left; break;
+                            case HouseDefinition.Side.Back: direction = Vector3.forward; break;
+                        }
+                        layer.MakeHole(origin, direction, co.dimension.width, co.dimension.height);
                     }
                 }
                 building.AddObject(layer, bs.material);
                 center.y += height;
             }
-            building.Build(target);
+
+            if (house.roofHeight > 0) {
+                Vector3 a = center + new Vector3(-width/2, 0, -length/2);
+                Vector3 b = center + new Vector3(-width/2, 0, length/2);
+                Vector3 c = center + new Vector3(width/2, 0, length/2);
+                Vector3 d = center + new Vector3(width/2, 0, -length/2);
+
+                float uvScale = house.uvScaleGable;
+                Vector3 e1 = center + new Vector3(0, house.roofHeight, -length/2);
+                Vector3 e2 = center + new Vector3(0, house.roofHeight, length/2);
+                Face frontFace = new Face(a, e1, d);
+                frontFace.SetUVFront(width * uvScale, house.roofHeight * uvScale);
+                building.AddFace(frontFace, house.materialGable);
+                Face backface = new Face(c, e2, b);
+                backface.SetUVFront(width * uvScale, house.roofHeight * uvScale);
+                building.AddFace(backface, house.materialGable);
+                
+                if (lastLayerIsHollow) {
+                    Face innerFrontFace = frontFace.DeepCopy();
+                    innerFrontFace.MoveFaceBy(Vector3.forward * lastWallThickness).InvertNormals();
+                    Face innerBackFace = backface.DeepCopy().MoveFaceBy(Vector3.back * lastWallThickness).InvertNormals();
+                    building.AddFace(innerFrontFace, house.materialGable);
+                    building.AddFace(innerBackFace, house.materialGable);
+                    Face innerLeftRoof = new Face(b, a, e1, e2);
+                    float h = Mathf.Sqrt(width/2 * width/2 + house.roofHeight * house.roofHeight);
+                    innerLeftRoof.SetUVFront(length * uvScale, h * uvScale);
+                    Face innerRightRoof = new Face(d, c, e2, e1);
+                    innerRightRoof.SetUVFront(length * uvScale, h * uvScale);
+                    building.AddFace(innerLeftRoof, house.materialGable);
+                    building.AddFace(innerRightRoof, house.materialGable);
+                    Face innerLeftTopWall = new Face(a,b, b+Vector3.right * lastWallThickness, a+Vector3.right * lastWallThickness);
+                    innerLeftTopWall.SetUVFront(lastWallThickness, length);
+                    Face innerRightTopWall = new Face(d+Vector3.left * lastWallThickness, c+Vector3.left * lastWallThickness, c, d);
+                    innerRightTopWall.SetUVFront(lastWallThickness, length);
+                    building.AddFace(innerLeftTopWall, house.materialGable);
+                    building.AddFace(innerRightTopWall, house.materialGable);
+                }
+
+                Vector3 extZ = new Vector3(0, 0, house.roofExtendZ);
+                if (house.roofExtendZ > 0) {
+                    Face rightBackExtend = new Face(e2, c, c + extZ, e2 + extZ);
+                    rightBackExtend.SetUVFront(house.roofExtendZ * uvScale, width/2 * uvScale);
+                    building.AddFace(rightBackExtend, house.materialGable);
+                    Face rightFrontExtend = new Face(e1 - extZ, d - extZ, d, e1);
+                    rightFrontExtend.SetUVFront(house.roofExtendZ * uvScale, width/2 * uvScale);
+                    building.AddFace(rightFrontExtend, house.materialGable);
+                    Face leftBackExtend = new Face(b, e2, e2 + extZ, b + extZ);
+                    leftBackExtend.SetUVFront(house.roofExtendZ * uvScale, width/2 * uvScale);
+                    building.AddFace(leftBackExtend, house.materialGable);
+                    Face leftFrontExtend = new Face(a - extZ, e1 - extZ, e1, a);
+                    leftFrontExtend.SetUVFront(house.roofExtendZ * uvScale, width/2 * uvScale);
+                    building.AddFace(leftFrontExtend, house.materialGable);
+                    e2 = e2 + extZ;
+                    e1 = e1 - extZ;
+                }
+                Vector3 ar = a - extZ;
+                Vector3 br = b + extZ;
+                Vector3 cr = c + extZ;
+                Vector3 dr = d - extZ;
+                if (house.roofExtendX > 0) {
+                    float m = -house.roofHeight / (width/2);
+                    Vector3 extX = new Vector3(house.roofExtendX, house.roofExtendX * m, 0);
+                    Face rightExtend = new Face(dr, dr+extX, cr+extX, cr);
+                    rightExtend.SetUVFront(length * uvScale, house.roofExtendX * uvScale);
+                    building.AddFace(rightExtend, house.materialGable);
+                    dr = dr + extX;
+                    cr = cr + extX;
+                    extX = new Vector3(-house.roofExtendX, house.roofExtendX * m, 0);
+                    Face leftExtend = new Face(br, br+extX, ar+extX, ar);
+                    leftExtend.SetUVFront(length * uvScale, house.roofExtendX * uvScale);
+                    building.AddFace(leftExtend, house.materialGable);
+                    br = br + extX;
+                    ar = ar + extX;
+                }
+
+                Vector3 roofThickness = new Vector3(0, house.roofThickness, 0);
+                List<Vector3> roofEdges = new List<Vector3> {ar, e1, dr, cr, e2, br, ar};
+                building.AddFaces(Builder.ExtrudeEdges(roofEdges, roofThickness, uvScale), house.materialGable);
+
+                ar = ar + roofThickness;
+                br = br + roofThickness;
+                cr = cr + roofThickness;
+                dr = dr + roofThickness;
+                e1 = e1 + roofThickness;
+                e2 = e2 + roofThickness;
+
+                uvScale = house.uvScaleRoof;
+                Face leftRoof = new Face(br, e2, e1, ar);
+                float halfSlope = Mathf.Sqrt(width/2 * width/2 + house.roofHeight * house.roofHeight);
+                leftRoof.SetUVFront((length + 2 * house.roofExtendZ) * uvScale, halfSlope * uvScale);
+                building.AddFace(leftRoof, house.materialRoof);
+                Face rightRoof = new Face(dr, e1, e2, cr);
+                rightRoof.SetUVFront((length + 2 * house.roofExtendZ) * uvScale, halfSlope * uvScale);
+                building.AddFace(rightRoof, house.materialRoof);
+            }
+
+            string name = "LOD" + lod;
+            GameObject lodMeshes = Building.GetChildByName(target, name);
+            if (lodMeshes == null) {
+                lodMeshes = new GameObject(name);
+                lodMeshes.transform.parent = target.transform;
+                lodMeshes.transform.position = target.transform.position;
+                lodMeshes.transform.rotation = target.transform.rotation;
+            }
+            building.Build(lodMeshes);
         }
     }
 }
