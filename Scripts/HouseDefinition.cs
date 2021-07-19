@@ -1,4 +1,3 @@
-using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 using System;
@@ -36,6 +35,10 @@ public class HouseDefinition : ScriptableObject
     public class BuildingStructure {
         public string name;
         public float height;
+        public bool hollow;
+        public bool addCeiling;
+        public float wallThickness = 0.5f;
+
         [Tooltip("This is an indent per unit height.")]
         public float slopeX = 0;
         [Tooltip("This is an indent per unit height.")]

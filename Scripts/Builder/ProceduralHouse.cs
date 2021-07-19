@@ -12,6 +12,7 @@ namespace ProceduralStructures {
             float length = house.length;
             foreach (HouseDefinition.BuildingStructure bs in house.layers) {
                 float height = bs.height;
+                float wallThickness = 0.5f;
                 Vector3 a = center + new Vector3(-width/2, 0, -length/2);
                 Vector3 b = center + new Vector3(-width/2, 0, length/2);
                 Vector3 c = center + new Vector3(width/2, 0, length/2);
@@ -23,8 +24,12 @@ namespace ProceduralStructures {
 
                 Face frontface = new Face(a, a1, d1, d);
                 frontface.SetUVFront(width * bs.uvScale, height * bs.uvScale);
+                Vector3 wallOffsetLeft = new Vector3(wallThickness, 0, wallThickness);
+                Vector3 wallOffsetRight = new Vector3(-wallThickness, 0, wallThickness);
+                Face frontInnerFace = new Face(d + wallOffsetRight, d1 + wallOffsetRight, a1 + wallOffsetLeft, a + wallOffsetLeft);
                 BuildingObject frontWall = new BuildingObject();
                 frontWall.AddFace(frontface);
+                frontWall.AddFace(frontInnerFace);
                 frontWall.TranslateFaces(-a);
 
                 Face rightFace = new Face(d, d1, c1, c);
@@ -64,6 +69,7 @@ namespace ProceduralStructures {
                     if (co.material != bs.material) {
                         Face doorFace = Builder.FindFirstFaceByTag(wall.faces, Builder.CUTOUT);
                         if (doorFace != null) {
+                            doorFace.UnTag(Builder.CUTOUT);
                             wall.LocalToWorld(doorFace);
                             doorFace.SetUVFront(co.dimension.width * co.uvScale, co.dimension.height * co.uvScale);
                             building.AddFace(doorFace, co.material);
@@ -209,5 +215,62 @@ namespace ProceduralStructures {
             building.Build(target);
         }
 
+        public void RebuildHouseWithInterior(HouseDefinition house, GameObject target) {
+            Vector3 center = new Vector3(0, house.heightOffset, 0);
+            float width = house.width;
+            float length = house.length;
+            Building building = new Building();
+
+            foreach (HouseDefinition.BuildingStructure bs in house.layers) {
+                float height = bs.height;
+                float wallThickness = bs.wallThickness;
+                BuildingObject layer = new BuildingObject();
+                Vector3 a = center + new Vector3(-width/2, 0, -length/2);
+                Vector3 b = center + new Vector3(-width/2, 0, length/2);
+                Vector3 c = center + new Vector3(width/2, 0, length/2);
+                Vector3 d = center + new Vector3(width/2, 0, -length/2);
+                Vector3 a1 = a + new Vector3(bs.slopeX*height, height, bs.slopeZ*height);
+                Vector3 b1 = b + new Vector3(bs.slopeX*height, height, -bs.slopeZ*height);
+                Vector3 c1 = c + new Vector3(-bs.slopeX*height, height, -bs.slopeZ*height);
+                Vector3 d1 = d + new Vector3(-bs.slopeX*height, height, bs.slopeZ*height);
+
+                if (bs.hollow) {
+                    Vector3 ai = a + new Vector3(wallThickness, 0, wallThickness);
+                    Vector3 bi = b + new Vector3(wallThickness, 0, -wallThickness);
+                    Vector3 ci = c + new Vector3(-wallThickness, 0, -wallThickness);
+                    Vector3 di = d + new Vector3(-wallThickness, 0, wallThickness);
+                    layer.AddFaces(Builder.ExtrudeEdges(new List<Vector3> {a, d, c, b, a}, Vector3.up * height, bs.uvScale));
+                    layer.AddFaces(Builder.ExtrudeEdges(new List<Vector3> {ai, bi, ci, di, ai}, Vector3.up * height, bs.uvScale));
+                    Face floor = new Face(ai, bi, ci, di);
+                    //floor.MoveFaceBy(Vector3.up * wallThickness);
+                    floor.SetUVFront(width * bs.uvScale, height * bs.uvScale);
+                    layer.AddFace(floor);
+                    if (bs.addCeiling) {
+                        Face ceiling = floor.DeepCopy();
+                        ceiling.MoveFaceBy(Vector3.up * (height - wallThickness)).InvertNormals();
+                        ceiling.SetUVFront(width * bs.uvScale, height * bs.uvScale);
+                        layer.AddFace(ceiling);
+                    }
+                    foreach (HouseDefinition.WallCutout co in bs.cutouts) {
+                        Vector3 origin = center + new Vector3(co.dimension.x + co.dimension.width/2, co.dimension.y + co.dimension.height/2, 0);
+                        Vector3 direction = Vector3.back;
+                        switch(co.side) {
+                            case HouseDefinition.Side.Right: direction = Vector3.right; break;
+                            case HouseDefinition.Side.Left: direction = Vector3.left; break;
+                            case HouseDefinition.Side.Back: direction = Vector3.forward; break;
+                        }
+                        layer.MakeHole(origin, direction, co.dimension.width, co.dimension.height);
+                    }
+                } else {
+                    layer.AddFaces(Builder.ExtrudeEdges(new List<Vector3> {a, d, c, b, a}, Vector3.up * height, bs.uvScale));
+                    foreach (HouseDefinition.WallCutout co in bs.cutouts) {
+                        layer.CutFront(co.dimension, bs.uvScale);
+                    }
+                }
+                building.AddObject(layer, bs.material);
+                center.y += height;
+            }
+            building.Build(target);
+        }
     }
 }

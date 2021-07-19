@@ -35,8 +35,8 @@ namespace ProceduralStructures {
                 List<Face> n = new List<Face>();
                 // is the normal of this face already pointing to us?
                 Quaternion rotation = Quaternion.identity;
-                if (face.normal.normalized != Vector3.back) {
-                    Vector3 originalDirection = face.normal.normalized;
+                if (face.normal != Vector3.back) {
+                    Vector3 originalDirection = face.normal;
                     rotation = Quaternion.FromToRotation(originalDirection, Vector3.back);
                     face.Rotate(rotation);
                     localToWorld = Quaternion.FromToRotation(Vector3.back, originalDirection);
@@ -84,6 +84,48 @@ namespace ProceduralStructures {
             }
             return result;
         }
+
+        public static Face[] SliceFace(Face face, Vector3 v0, Vector3 v1) {
+            if (Vector3.Dot(face.d-face.a, v1-face.a) < 0.999f) {
+                Debug.Log("Slicing v1 " + v1 + " is not on DA [" + face.d + "," + face.a + "]");
+            }
+            if (Vector3.Dot(face.c-face.b, v0-face.b) < 0.999f) {
+                Debug.Log("Slicing v0 " + v0 + " is not on CB [" + face.c + "," + face.b + "]");
+            }
+            Face left = new Face(face.a, face.b, v0, v1);
+            float relU = (v1 - face.a).magnitude/(face.d - face.a).magnitude;
+            left.uvA = face.uvA;
+            left.uvB = face.uvB;
+            left.uvC = Vector2.Lerp(face.uvB, face.uvC, relU);
+            left.uvD = Vector2.Lerp(face.uvA, face.uvD, relU);
+            Face right = new Face(v1, v0, face.c, face.d);
+            right.uvA = left.uvD;
+            right.uvB = left.uvC;
+            right.uvC = face.uvC;
+            right.uvD = face.uvD;
+            return new Face[] {left, right};
+        }
+
+        public static Face[] SliceFaceHorizontally(Face face, float relY) {
+            if (relY < 0 || relY > 1) {
+                Debug.Log("Slicing relY is invalid: " + relY);
+            }
+            Vector3 v0 = Vector3.Lerp(face.a, face.b, relY);
+            Vector3 v1 = Vector3.Lerp(face.d, face.c, relY);
+            Face bottom = new Face(face.a, v0, v1, face.d);
+            float relU = (v0 - face.a).magnitude/(face.b - face.a).magnitude;
+            bottom.uvA = face.uvA;
+            bottom.uvB = Vector2.Lerp(face.uvA, face.uvB, relU);
+            bottom.uvC = Vector2.Lerp(face.uvD, face.uvC, relU);
+            bottom.uvD = face.uvD;
+            Face top = new Face(v0, face.b, face.c, v1);
+            top.uvA = bottom.uvB;
+            top.uvB = face.uvB;
+            top.uvC = face.uvC;
+            top.uvD = bottom.uvC;
+            return new Face[] {bottom, top};
+        }
+
         public static Face[] SliceFace(Face face, float dx, float dy) {
             if (dx > 0) {
                 Vector3 e = new Vector3(face.b.x + dx, face.b.y, face.b.z);
@@ -130,6 +172,26 @@ namespace ProceduralStructures {
                     faces.Add(face);
                 }
                 prev = v;
+                firstVertex = false;
+            }
+            return faces;
+        }
+
+        public static List<Face> CloseEdgeLoops(List<Vector3> fromLoop, List<Vector3> toLoop, float uvScale=1f) {
+            List<Face> faces = new List<Face>();
+            Vector3 prev0 = Vector3.zero;
+            Vector3 prev1 = Vector3.zero;
+            bool firstVertex = true;
+            for (int i = 0; i < fromLoop.Count; i++) {
+                Vector3 v0 = fromLoop[i];
+                Vector3 v1 = toLoop[i];
+                if (!firstVertex) {
+                    Face face = new Face(prev0, v0, v1, prev1);
+                    face.SetUVFront(Vector3.Distance(prev0, prev1) * uvScale, Vector3.Distance(prev0, v0) * uvScale);
+                    faces.Add(face);
+                }
+                prev0 = v0;
+                prev1 = v1;
                 firstVertex = false;
             }
             return faces;

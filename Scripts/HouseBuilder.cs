@@ -1,4 +1,5 @@
 using UnityEngine;
+using ProceduralStructures;
 
 public class HouseBuilder : MonoBehaviour
 {
