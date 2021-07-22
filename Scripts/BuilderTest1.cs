@@ -80,7 +80,7 @@ public class BuilderTest1 : MonoBehaviour
             }
 
             if (makeHole) {
-                wall.MakeHole(localOrigin, localDirection, Vector3.up, holeWidth, holeHeight, transform);
+                wall.MakeHole(localOrigin, localDirection, Vector3.up, holeWidth, holeHeight);
                 Face opening = wall.FindFirstFaceByTag(Builder.CUTOUT);
                 if (opening != null) {
                     wall.RemoveFace(opening);

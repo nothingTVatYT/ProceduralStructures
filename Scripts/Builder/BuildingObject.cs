@@ -76,7 +76,17 @@ namespace ProceduralStructures {
             return this;
         }
 
-        public BuildingObject MakeHole(Vector3 origin, Vector3 direction, Vector3 up, float width, float height, Transform transform) {
+        public Bounds CalculateGlobalBounds() {
+            Bounds bounds = new Bounds(rotation * (faces[0].a + position), Vector3.zero);
+            foreach (Face face in faces) {
+                foreach (Vector3 p in face.GetVertices()) {
+                    bounds.Encapsulate(rotation * (p + position));
+                }
+            }
+            return bounds;
+        }
+
+        public BuildingObject MakeHole(Vector3 origin, Vector3 direction, Vector3 up, float width, float height) {
             List<Face> result = new List<Face>();
             Vector3 intersection;
             bool fromBack;

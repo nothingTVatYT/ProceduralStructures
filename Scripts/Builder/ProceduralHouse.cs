@@ -273,7 +273,7 @@ namespace ProceduralStructures {
                             case HouseDefinition.Side.Left: direction = Vector3.left; break;
                             case HouseDefinition.Side.Back: direction = Vector3.forward; break;
                         }
-                        layer.MakeHole(origin, direction, co.dimension.width, co.dimension.height);
+                        layer.MakeHole(origin, direction, Vector3.up, co.dimension.width, co.dimension.height);
                     }
                 } else {
                     lastLayerIsHollow = false;
@@ -287,11 +287,12 @@ namespace ProceduralStructures {
                             case HouseDefinition.Side.Left: direction = Vector3.left; break;
                             case HouseDefinition.Side.Back: direction = Vector3.forward; break;
                         }
-                        layer.MakeHole(origin, direction, co.dimension.width, co.dimension.height);
+                        layer.MakeHole(origin, direction, Vector3.up, co.dimension.width, co.dimension.height);
                         Face opening = layer.FindFirstFaceByTag(Builder.CUTOUT);
                         if (opening != null) {
                             layer.RemoveFace(opening);
                             opening.SetUVForSize(co.uvScale);
+                            opening.UnTag(Builder.CUTOUT);
                             building.AddFace(opening, co.material);
                         } else {
                             Debug.Log("no opening found for " + co.name);
@@ -301,6 +302,10 @@ namespace ProceduralStructures {
                 // add stairs
                 if (bs.stairs != null) {
                     foreach (HouseDefinition.Stairs stairs in bs.stairs) {
+                        // skip inside stairs for LOD >0
+                        if (lod > 0 && stairs.inside) {
+                            continue;
+                        }
                         Vector3 stairsPosition = center;
                         Quaternion stairsRotation = Quaternion.identity;
                         switch (stairs.side)
@@ -375,7 +380,14 @@ namespace ProceduralStructures {
                         }
                         stairsBlock.position = center + new Vector3(stairs.offset, stairs.baseHeight, -stairs.baseLength/2 - zOffset);
                         if (stairs.inside) {
-                            layer.MakeHole(stairsBlock.position - Vector3.up, Vector3.up, stairs.baseWidth, stairs.baseLength);
+                            //Vector3 holePosition = stairsBlock.rotation * (stairsBlock.position - Vector3.up);
+                            Bounds stairsBounds = stairsBlock.CalculateGlobalBounds();
+                            Vector3 holePosition = stairsBounds.center;
+                            layer.MakeHole(holePosition, Vector3.up, Vector3.back, stairsBounds.extents.x*2, stairsBounds.extents.z*2);
+                            Face hole = layer.FindFirstFaceByTag(Builder.CUTOUT);
+                            if (hole != null) {
+                                layer.RemoveFace(hole);
+                            }
                         }
                         Debug.Log("stairs position: " + stairsBlock.position);
                         building.AddObject(stairsBlock, stairs.material);
