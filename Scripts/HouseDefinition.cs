@@ -19,6 +19,7 @@ public class HouseDefinition : ScriptableObject
     [Serializable]
     public class Stairs {
         public Side side = Side.Front;
+        public bool inside = false;
         public float offset = 0;
         public float baseWidth = 1;
         public float baseLength = 0.6f;
@@ -37,6 +38,7 @@ public class HouseDefinition : ScriptableObject
         public float height;
         public bool hollow;
         public bool addCeiling;
+        public bool addFloor = true;
         public float wallThickness = 0.5f;
 
         [Tooltip("This is an indent per unit height.")]

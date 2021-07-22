@@ -215,14 +215,21 @@ namespace ProceduralStructures {
             building.Build(target);
         }
 
+        // the lod integer should be 0 to build the complete house and with higher levels we add less details
+        // currently one 0 and 1 is used where with lod=1 we skip the interior objects including the inner walls sides
         public void RebuildHouseWithInterior(HouseDefinition house, GameObject target, int lod) {
+            // this is the position of the resulting gameobject
             Vector3 center = new Vector3(0, house.heightOffset, 0);
+            // width is the distance from the leftmost to the rightmost wall corners seen from the front i.e. on the x axis
             float width = house.width;
+            // length is the distance from front to back wall i.e. on the z axis
             float length = house.length;
             Building building = new Building();
             bool lastLayerIsHollow = false;
+            // this is used to close the top of the walls on the last layer when we build the roof
             float lastWallThickness = 0;
 
+            // each layer describes a floor although multiple layers could be combined to a floor if you disable floor/ceiling creation
             foreach (HouseDefinition.BuildingStructure bs in house.layers) {
                 float height = bs.height;
                 float wallThickness = bs.wallThickness;
@@ -243,14 +250,17 @@ namespace ProceduralStructures {
                     Vector3 bi = b + new Vector3(wallThickness, 0, -wallThickness);
                     Vector3 ci = c + new Vector3(-wallThickness, 0, -wallThickness);
                     Vector3 di = d + new Vector3(-wallThickness, 0, wallThickness);
+                    // outer faces of walls
                     layer.AddFaces(Builder.ExtrudeEdges(new List<Vector3> {a, d, c, b, a}, Vector3.up * height, bs.uvScale));
+                    // inner faces
                     layer.AddFaces(Builder.ExtrudeEdges(new List<Vector3> {ai, bi, ci, di, ai}, Vector3.up * height, bs.uvScale));
-                    Face floor = new Face(ai, bi, ci, di);
-                    //floor.MoveFaceBy(Vector3.up * wallThickness);
-                    floor.SetUVFront(width * bs.uvScale, height * bs.uvScale);
-                    layer.AddFace(floor);
+                    if (bs.addFloor) {
+                        Face floor = new Face(ai, bi, ci, di);
+                        floor.SetUVFront(width * bs.uvScale, height * bs.uvScale);
+                        layer.AddFace(floor);
+                    }
                     if (bs.addCeiling) {
-                        Face ceiling = floor.DeepCopy();
+                        Face ceiling = new Face(ai, bi, ci, di);
                         ceiling.MoveFaceBy(Vector3.up * (height - wallThickness)).InvertNormals();
                         ceiling.SetUVFront(width * bs.uvScale, height * bs.uvScale);
                         layer.AddFace(ceiling);
@@ -278,6 +288,97 @@ namespace ProceduralStructures {
                             case HouseDefinition.Side.Back: direction = Vector3.forward; break;
                         }
                         layer.MakeHole(origin, direction, co.dimension.width, co.dimension.height);
+                        Face opening = layer.FindFirstFaceByTag(Builder.CUTOUT);
+                        if (opening != null) {
+                            layer.RemoveFace(opening);
+                            opening.SetUVForSize(co.uvScale);
+                            building.AddFace(opening, co.material);
+                        } else {
+                            Debug.Log("no opening found for " + co.name);
+                        }
+                    }
+                }
+                // add stairs
+                if (bs.stairs != null) {
+                    foreach (HouseDefinition.Stairs stairs in bs.stairs) {
+                        Vector3 stairsPosition = center;
+                        Quaternion stairsRotation = Quaternion.identity;
+                        switch (stairs.side)
+                        {
+                            case HouseDefinition.Side.Front:
+                                stairsPosition = center - new Vector3(0, 0, -length/2);
+                                break;
+                            case HouseDefinition.Side.Back:
+                                stairsPosition = center - new Vector3(0, height, -length/2);
+                                stairsRotation = Quaternion.AngleAxis(180, Vector3.up);
+                                break;
+                            case HouseDefinition.Side.Right:
+                                stairsPosition = center - new Vector3(0, height, -width/2);
+                                stairsRotation = Quaternion.AngleAxis(-90, Vector3.up);
+                                break;
+                            case HouseDefinition.Side.Left:
+                                stairsPosition = center - new Vector3(0, height, -width/2);
+                                stairsRotation = Quaternion.AngleAxis(90, Vector3.up);
+                                break;
+                        }
+                        Face floor = Face.CreateXZPlane(stairs.baseWidth,stairs.baseLength);
+                        floor.SetUVFront(stairs.baseWidth * stairs.uvScale, stairs.baseLength * stairs.uvScale);
+                        BuildingObject stairsBlock = new BuildingObject();
+                        //stairsBlock.position = stairsPosition;
+                        stairsBlock.rotation = stairsRotation;
+                        stairsBlock.AddFace(floor);
+                        Vector3 dn = Vector3.down * stairs.stepHeight;
+                        Vector3 ou = Vector3.back * Mathf.Cos(stairs.descentAngle*Mathf.Deg2Rad) * stairs.stepDepth;
+                        Vector3 si = Vector3.right * Mathf.Sin(stairs.descentAngle*Mathf.Deg2Rad) * stairs.stepDepth;
+                        float currentHeight = 0;
+                        Vector3 stepC = floor.c;
+                        Vector3 stepD = floor.d;
+                        Vector3 stepA = floor.a;
+                        Vector3 stepB = floor.b;
+                        Debug.Log("stairs ou=" + ou + ", si=" + si);
+                        while (currentHeight < stairs.totalHeight) {
+                            // extrude down
+                            stairsBlock.AddFaces(Builder.ExtrudeEdges(new List<Vector3> {stepC, stepD, stepA, stepB}, dn, stairs.uvScale));
+                            stepC += dn;
+                            stepD += dn;
+                            stepA += dn;
+                            stepB += dn;
+                            currentHeight += stairs.stepHeight;
+                            if (currentHeight >= stairs.totalHeight) break;
+                            // extrude step
+                            if (ou.sqrMagnitude > 0) {
+                                stairsBlock.AddFaces(Builder.ExtrudeEdges(new List<Vector3> {stepD, stepA}, ou, stairs.uvScale));
+                                stepD += ou;
+                                stepA += ou;
+                            }
+                            if (si.sqrMagnitude > 0) {
+                                if (stairs.descentAngle > 0) {
+                                    stairsBlock.AddFaces(Builder.ExtrudeEdges(new List<Vector3> {stepC, stepD}, si, stairs.uvScale));
+                                    stepC += si;
+                                    stepD += si;
+                                } else {
+                                    stairsBlock.AddFaces(Builder.ExtrudeEdges(new List<Vector3> {stepA, stepB}, si, stairs.uvScale));
+                                    stepA += si;
+                                    stepB += si;
+                                }
+                            }
+                        }
+
+                        //stairsBlock.TranslatePosition(new Vector3(stairs.baseWidth/2 + stairs.offset, stairs.baseHeight, -stairs.baseLength/2));
+                        float zOffset = length/2;
+                        if (stairs.side == HouseDefinition.Side.Left || stairs.side == HouseDefinition.Side.Right) {
+                            zOffset = width/2;
+                        }
+                        if (stairs.inside) {
+                            zOffset -= stairs.baseLength + wallThickness;
+                            stairsBlock.RotateFaces(Quaternion.AngleAxis(180, Vector3.up));
+                        }
+                        stairsBlock.position = center + new Vector3(stairs.offset, stairs.baseHeight, -stairs.baseLength/2 - zOffset);
+                        if (stairs.inside) {
+                            layer.MakeHole(stairsBlock.position - Vector3.up, Vector3.up, stairs.baseWidth, stairs.baseLength);
+                        }
+                        Debug.Log("stairs position: " + stairsBlock.position);
+                        building.AddObject(stairsBlock, stairs.material);
                     }
                 }
                 building.AddObject(layer, bs.material);

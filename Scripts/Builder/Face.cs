@@ -1,5 +1,3 @@
-using System.Collections;
-using System.Collections.Generic;
 using UnityEngine;
 
 namespace ProceduralStructures {
@@ -12,12 +10,16 @@ namespace ProceduralStructures {
             this.c = c;
             this.d = d;
             isTriangle = false;
+            // initialize UV
+            SetUVFront(1, 1);
         }
         public Face(Vector3 a, Vector3 b, Vector3 c) {
             this.a = a;
             this.b = b;
             this.c = c;
             isTriangle = true;
+            // initialize UV
+            SetUVFront(1, 1);
         }
 
         public static Face CreateXZPlane(float width, float length) {
@@ -33,6 +35,7 @@ namespace ProceduralStructures {
         public Vector3 normal { get { return Vector3.Cross(b-a, (isTriangle ? c : d)-a).normalized;} }
         public bool isTriangle = false;
         public int tags = 0;
+        public float sortOrder = 0;
         public Vector3[] GetVertices() {
             return new Vector3[] { a, b, c, d };
         }
@@ -52,6 +55,7 @@ namespace ProceduralStructures {
             n.uvC = uvC;
             n.uvD = uvD;
             n.tags = tags;
+            n.sortOrder = sortOrder;
             return n;
         }
 
@@ -135,7 +139,7 @@ namespace ProceduralStructures {
 
         public override string ToString() {
             // return "F(" + a +"," + b + "," + c + "," + d + ")";
-            return string.Format("F(a={0},b={1},c={2},d={3},normal={4})", a, b, c, d, normal);
+            return string.Format("F(a={0},b={1},c={2},d={3},normal={4},tags={5})", a, b, c, d, normal, tags);
         }
         public bool IsTagged(int tag) {
             return (tags & tag) != 0;
@@ -153,6 +157,13 @@ namespace ProceduralStructures {
             d = d + direction;
             return this;
         }
+
+        public void SetUVForSize(float uvScale) {
+            float width = Vector3.Distance(a, d);
+            float height = Vector3.Distance(a, b);
+            SetUVFront(width * uvScale, height * uvScale);
+        }
+
         public void SetUVFront(float width, float height) {
             uvA = new Vector2(0, 0);
             if (isTriangle) {

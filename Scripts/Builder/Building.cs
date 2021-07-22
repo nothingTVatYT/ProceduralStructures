@@ -29,7 +29,7 @@ namespace ProceduralStructures {
         }
 
         public void AddObject(BuildingObject child, Material material) {
-            child.ResetTransform();
+            child.ApplyTransform();
             GetFacesByMaterial(material).AddRange(child.faces);
         }
 
@@ -59,20 +59,33 @@ namespace ProceduralStructures {
                 childByMaterial.transform.localScale = Vector3.one;
                 childByMaterial.isStatic = target.isStatic;
             }
-            MeshFilter meshFilter = childByMaterial.AddComponent<MeshFilter>();
+            MeshFilter meshFilter = childByMaterial.GetComponent<MeshFilter>();
+            if (meshFilter == null) {
+                meshFilter = childByMaterial.AddComponent<MeshFilter>();
+            }
             meshFilter.mesh = mesh;
-            MeshRenderer meshRenderer = childByMaterial.AddComponent<MeshRenderer>();
+            MeshRenderer meshRenderer = childByMaterial.GetComponent<MeshRenderer>();
+            if (meshRenderer == null) {
+                meshRenderer = childByMaterial.AddComponent<MeshRenderer>();
+            }
             meshRenderer.sharedMaterial = material;
             mesh.RecalculateNormals();
             mesh.Optimize();
-            MeshCollider meshCollider = childByMaterial.AddComponent<MeshCollider>();
+            MeshCollider meshCollider = childByMaterial.GetComponent<MeshCollider>();
+            if (meshCollider == null) {
+                meshCollider = childByMaterial.AddComponent<MeshCollider>();
+            }
             meshCollider.sharedMesh = mesh;
         }
 
         public void ClearMeshes(GameObject target) {
             for (int i = target.transform.childCount-1; i>=0; i--) {
                 GameObject go = target.transform.GetChild(i).gameObject;
-                Object.DestroyImmediate(go);
+                if (Application.isPlaying) {
+                    //Object.Destroy(go);
+                } else {
+                    Object.DestroyImmediate(go);
+                }
             }
         }
 

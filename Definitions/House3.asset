@@ -13,13 +13,14 @@ MonoBehaviour:
   m_Name: House3
   m_EditorClassIdentifier: 
   heightOffset: -2
-  width: 5
-  length: 7
+  width: 7
+  length: 8
   layers:
   - name: Basement
     height: 2.4
     hollow: 0
     addCeiling: 0
+    addFloor: 1
     wallThickness: 0.5
     slopeX: 0.1
     slopeZ: 0.1
@@ -31,6 +32,7 @@ MonoBehaviour:
     height: 3
     hollow: 1
     addCeiling: 1
+    addFloor: 1
     wallThickness: 0.3
     slopeX: 0
     slopeZ: 0
@@ -49,7 +51,8 @@ MonoBehaviour:
       uvScale: 0.5
     stairs:
     - side: 0
-      offset: 1
+      inside: 0
+      offset: 0
       baseWidth: 3
       baseLength: 0.4
       baseHeight: 0
@@ -59,26 +62,29 @@ MonoBehaviour:
       stepDepth: 0.2
       material: {fileID: 2100000, guid: 9e2aae7ee83e19d468a3f2d21f2fe4ae, type: 2}
       uvScale: 0.5
+    - side: 3
+      inside: 1
+      offset: 2
+      baseWidth: 1.4
+      baseLength: 1.4
+      baseHeight: 2.7
+      descentAngle: 90
+      totalHeight: 2.7
+      stepHeight: 0.3
+      stepDepth: 0.3
+      material: {fileID: 2100000, guid: c7cf82375adb9519c8b9db5ecfb87a24, type: 2}
+      uvScale: 1
   - name: Second Floor
     height: 3
     hollow: 1
     addCeiling: 0
+    addFloor: 0
     wallThickness: 0.3
     slopeX: 0
     slopeZ: 0
     material: {fileID: 2100000, guid: ef3aeaa0049cbe447969df3bee614da1, type: 2}
     uvScale: 1
-    cutouts:
-    - name: weirdDoor
-      side: 3
-      dimension:
-        serializedVersion: 2
-        x: 0
-        y: 0.2
-        width: 1.3
-        height: 2.4
-      material: {fileID: 2100000, guid: 1ba65a59041a6d0448ce7b2b8605bd5a, type: 2}
-      uvScale: 0.5
+    cutouts: []
     stairs: []
   roofHeight: 3
   gableWidth: 1

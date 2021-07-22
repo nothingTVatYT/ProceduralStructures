@@ -85,6 +85,38 @@ namespace ProceduralStructures {
             return result;
         }
 
+        public static Face[] SplitFaceABCD(Face face, float rAB, float rCD) {
+            Vector3 mab = Vector3.Lerp(face.a, face.b, rAB);
+            Vector3 mcd = Vector3.Lerp(face.c, face.d, rCD);
+            Face f1 = new Face(mab, face.b, face.c, mcd);
+            Face f2 = new Face(face.a, mab, mcd, face.d);
+            f1.uvA = Vector2.Lerp(face.uvA, face.uvB, rAB);
+            f1.uvB = face.uvB;
+            f1.uvC = face.uvC;
+            f1.uvD = Vector2.Lerp(face.uvC, face.uvD, rCD);
+            f2.uvA = face.uvA;
+            f2.uvB = f1.uvA;
+            f2.uvC = f1.uvD;
+            f2.uvD = face.uvD;
+            return new Face[] { f1, f2 };
+        }
+
+        public static Face[] SplitFaceBCDA(Face face, float rBC, float rDA) {
+            Vector3 mbc = Vector3.Lerp(face.b, face.c, rBC);
+            Vector3 mda = Vector3.Lerp(face.d, face.a, rDA);
+            Face f1 = new Face(face.a, face.b, mbc, mda);
+            Face f2 = new Face(mda, mbc, face.c, face.d);
+            f1.uvA = face.uvA;
+            f1.uvB = face.uvB;
+            f1.uvC = Vector2.Lerp(face.uvB, face.uvC, rBC);
+            f1.uvD = Vector2.Lerp(face.uvD, face.uvA, rDA);
+            f2.uvA = f1.uvD;
+            f2.uvB = f1.uvC;
+            f2.uvC = face.uvC;
+            f2.uvD = face.uvD;
+            return new Face[] { f1, f2 };
+        }
+
         public static Face[] SliceFace(Face face, Vector3 v0, Vector3 v1) {
             if (Vector3.Dot(face.d-face.a, v1-face.a) < 0.999f) {
                 Debug.Log("Slicing v1 " + v1 + " is not on DA [" + face.d + "," + face.a + "]");

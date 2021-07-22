@@ -20,6 +20,7 @@ MonoBehaviour:
     height: 2.3
     hollow: 0
     addCeiling: 0
+    addFloor: 1
     wallThickness: 0.5
     slopeX: 0
     slopeZ: 0
@@ -31,6 +32,7 @@ MonoBehaviour:
     height: 3
     hollow: 1
     addCeiling: 0
+    addFloor: 1
     wallThickness: 0.5
     slopeX: 0
     slopeZ: 0
@@ -41,7 +43,7 @@ MonoBehaviour:
       side: 0
       dimension:
         serializedVersion: 2
-        x: 1.79
+        x: 1.19
         y: 0
         width: 1
         height: 2.4
@@ -71,7 +73,7 @@ MonoBehaviour:
       side: 0
       dimension:
         serializedVersion: 2
-        x: 4
+        x: -3
         y: 1.2
         width: 1.5
         height: 1
@@ -81,7 +83,7 @@ MonoBehaviour:
       side: 1
       dimension:
         serializedVersion: 2
-        x: 4
+        x: 2
         y: 0
         width: 1
         height: 2.4
