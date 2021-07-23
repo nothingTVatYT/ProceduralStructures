@@ -45,7 +45,7 @@ MonoBehaviour:
         serializedVersion: 2
         x: -1
         y: 0.1
-        width: 1.4
+        width: 1.2
         height: 2.4
       material: {fileID: 2100000, guid: dafe3ff78cecef3449c7897b8575e23e, type: 2}
       uvScale: 0.5
