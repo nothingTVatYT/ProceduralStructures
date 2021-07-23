@@ -1,4 +1,3 @@
-using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 
@@ -146,7 +145,7 @@ namespace ProceduralStructures {
                         Vector3 stepD = floor.d;
                         Vector3 stepA = floor.a;
                         Vector3 stepB = floor.b;
-                        Debug.Log("stairs ou=" + ou + ", si=" + si);
+                        //Debug.Log("stairs ou=" + ou + ", si=" + si);
                         while (currentHeight < stairs.totalHeight) {
                             // extrude down
                             stairsBlock.AddFaces(Builder.ExtrudeEdges(new List<Vector3> {stepC, stepD, stepA, stepB}, dn, stairs.uvScale));
@@ -195,7 +194,7 @@ namespace ProceduralStructures {
                                 layer.RemoveFace(hole);
                             }
                         }
-                        Debug.Log("stairs position: " + stairsBlock.position);
+                        //Debug.Log("stairs position: " + stairsBlock.position);
                         building.AddObject(stairsBlock, stairs.material);
                     }
                 }
