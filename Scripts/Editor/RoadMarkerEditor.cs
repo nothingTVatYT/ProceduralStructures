@@ -1,7 +1,7 @@
 using UnityEngine;
 using UnityEditor;
 
-[CustomEditor(typeof(RoadMarker))]
+[CustomEditor(typeof(RoadMarker))][CanEditMultipleObjects]
 public class RoadMarkerEditor : Editor
 {
     public override void OnInspectorGUI() {

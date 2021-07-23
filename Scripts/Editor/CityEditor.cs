@@ -17,11 +17,20 @@ public class CityEditor : Editor
                 float streetLength = 0;
                 Vector3 begin;
                 if (street.transforms != null && street.transforms.Count > 0) {
+                    Transform prev = null;
                     begin = street.transforms[0].position;
                     foreach (Transform t in street.transforms) {
+                        if (prev != null) {
+                            RoadMarker previousMarker = prev.gameObject.GetComponent<RoadMarker>();
+                            RoadMarker currentMarker = t.gameObject.GetComponent<RoadMarker>();
+                            if (previousMarker != null && currentMarker != null) {
+                                previousMarker.nextMarker = currentMarker;
+                            }
+                        }
                         street.points.Add(t.position);
                         streetLength += (begin-t.position).magnitude;
                         begin = t.position;
+                        prev = t;
                     }
                     street.length = streetLength;
                 }
