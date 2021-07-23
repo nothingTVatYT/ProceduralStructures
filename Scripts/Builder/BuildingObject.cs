@@ -48,6 +48,12 @@ namespace ProceduralStructures {
             return this;
         }
 
+        public BuildingObject AddObject(BuildingObject other) {
+            other.ApplyTransform().ApplyDefaultMaterial();
+            faces.AddRange(other.faces);
+            return this;
+        }
+
         public BuildingObject RemoveFace(Face face) {
             if (!faces.Remove(face))
                 Debug.LogWarning("could not remove " + face);
@@ -124,7 +130,7 @@ namespace ProceduralStructures {
             faces.AddRange(Builder.ExtrudeEdges(vertices, direction, uvScale));
             return this;
         }
-        
+
         public BuildingObject MakeHole(Vector3 origin, Vector3 direction, Vector3 up, float width, float height) {
             List<Face> result = new List<Face>();
             Vector3 intersection;

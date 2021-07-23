@@ -188,7 +188,6 @@ namespace ProceduralStructures {
                         }
                         stairsBlock.position = center + new Vector3(stairs.offset, stairs.baseHeight, -stairs.baseLength/2 - zOffset);
                         if (stairs.inside) {
-                            //Vector3 holePosition = stairsBlock.rotation * (stairsBlock.position - Vector3.up);
                             Bounds stairsBounds = stairsBlock.CalculateGlobalBounds();
                             Vector3 holePosition = stairsBounds.center;
                             layer.MakeHole(holePosition, Vector3.up, Vector3.back, stairsBounds.extents.x*2, stairsBounds.extents.z*2);
@@ -225,8 +224,7 @@ namespace ProceduralStructures {
                 roofLayer.AddFace(backface);
                 
                 if (lastLayerIsHollow) {
-                    Face innerFrontFace = frontFace.DeepCopy();
-                    innerFrontFace.MoveFaceBy(Vector3.forward * lastWallThickness).InvertNormals();
+                    Face innerFrontFace = frontFace.DeepCopy().MoveFaceBy(Vector3.forward * lastWallThickness).InvertNormals();
                     Face innerBackFace = backface.DeepCopy().MoveFaceBy(Vector3.back * lastWallThickness).InvertNormals();
                     roofLayer.AddFace(innerFrontFace);
                     roofLayer.AddFace(innerBackFace);
