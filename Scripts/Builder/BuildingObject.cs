@@ -131,7 +131,7 @@ namespace ProceduralStructures {
             return this;
         }
 
-        public BuildingObject MakeHole(Vector3 origin, Vector3 direction, Vector3 up, float width, float height) {
+        public BuildingObject MakeHole(Vector3 origin, Vector3 direction, Vector3 up, float width, float height, float maxDistance = 0f) {
             List<Face> result = new List<Face>();
             Vector3 intersection;
             bool fromBack;
@@ -139,8 +139,13 @@ namespace ProceduralStructures {
             List<Face> unaffectedFaces = new List<Face>();
             foreach (Face face in faces) {
                 if (face.RayHit(origin, direction, false, out fromBack, out intersection)) {
-                    face.sortOrder = Vector3.Distance(origin, intersection);
-                    affectedFaces.Add(face);
+                    float distance = Vector3.Distance(origin, intersection);
+                    if (maxDistance == 0f || distance <= maxDistance) {
+                        face.sortOrder = distance;
+                        affectedFaces.Add(face);
+                    } else {
+                        unaffectedFaces.Add(face);
+                    }
                 } else {
                     unaffectedFaces.Add(face);
                 }
