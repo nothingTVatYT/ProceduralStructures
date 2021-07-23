@@ -7,6 +7,7 @@ namespace ProceduralStructures {
         public Vector3 position = Vector3.zero;
         public Quaternion rotation = Quaternion.identity;
         public List<Face> faces = new List<Face>();
+        public Material material;
 
         public BuildingObject ResetTransform() {
             foreach (Face face in faces) {
@@ -23,6 +24,17 @@ namespace ProceduralStructures {
             }
             position = Vector3.zero;
             rotation = Quaternion.identity;
+            return this;
+        }
+
+        public BuildingObject ApplyDefaultMaterial() {
+            if (material != null) {
+                foreach (Face face in faces) {
+                    if (face.material == null) {
+                        face.material = material;
+                    }
+                }
+            }
             return this;
         }
 
@@ -102,6 +114,17 @@ namespace ProceduralStructures {
             return this;
         }
 
+        public BuildingObject IndentFace(Face face, Vector3 direction, float uvScale) {
+            faces.Remove(face);
+            faces.AddRange(Builder.IndentFace(face, direction, uvScale));
+            return this;
+        }
+
+        public BuildingObject ExtrudeEdges(List<Vector3> vertices, Vector3 direction, float uvScale) {
+            faces.AddRange(Builder.ExtrudeEdges(vertices, direction, uvScale));
+            return this;
+        }
+        
         public BuildingObject MakeHole(Vector3 origin, Vector3 direction, Vector3 up, float width, float height) {
             List<Face> result = new List<Face>();
             Vector3 intersection;

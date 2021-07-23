@@ -1,10 +1,10 @@
-using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 
 namespace ProceduralStructures {
     public class Building
     {
+        List<Face> faces = new List<Face>();
         Dictionary<Material, List<Face>> facesByMaterial = new Dictionary<Material, List<Face>>();
 
         public List<Face> GetFacesByMaterial(Material material) {
@@ -20,21 +20,25 @@ namespace ProceduralStructures {
             }
         }
 
-        public void AddFace(Face face, Material material) {
-            GetFacesByMaterial(material).Add(face);
+        void GroupFacesByMaterial() {
+            facesByMaterial.Clear();
+            foreach (Face face in faces) {
+                GetFacesByMaterial(face.material).Add(face);
+            }
         }
 
-        public void AddFaces(List<Face> faces, Material material) {
-            GetFacesByMaterial(material).AddRange(faces);
+        public void AddFace(Face face) {
+            faces.Add(face);
         }
 
-        public void AddObject(BuildingObject child, Material material) {
-            child.ApplyTransform();
-            GetFacesByMaterial(material).AddRange(child.faces);
+        public void AddObject(BuildingObject child) {
+            child.ApplyTransform().ApplyDefaultMaterial();
+            faces.AddRange(child.faces);
         }
 
         public void Build(GameObject target) {
             ClearMeshes(target);
+            GroupFacesByMaterial();
             foreach (KeyValuePair<Material, List<Face>> keyValue in facesByMaterial) {
                 Mesh mesh = BuildMesh(keyValue.Value);
                 mesh.name = "Generated Mesh (" + keyValue.Key.name + ")";

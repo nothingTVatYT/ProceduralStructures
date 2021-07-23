@@ -86,7 +86,8 @@ public class BuilderTest1 : MonoBehaviour
                     wall.RemoveFace(opening);
                 }
             }
-            building.AddObject(wall, material);
+            wall.material = material;
+            building.AddObject(wall);
             building.Build(generatedMesh);
             rebuildMesh = false;
         }

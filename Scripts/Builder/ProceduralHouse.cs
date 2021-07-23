@@ -58,9 +58,9 @@ namespace ProceduralStructures {
                     Vector3 ci = c + new Vector3(-wallThickness, 0, -wallThickness);
                     Vector3 di = d + new Vector3(-wallThickness, 0, wallThickness);
                     // outer faces of walls
-                    layer.AddFaces(Builder.ExtrudeEdges(new List<Vector3> {a, d, c, b, a}, Vector3.up * height, bs.uvScale));
+                    layer.ExtrudeEdges(new List<Vector3> {a, d, c, b, a}, Vector3.up * height, bs.uvScale);
                     // inner faces
-                    layer.AddFaces(Builder.ExtrudeEdges(new List<Vector3> {ai, bi, ci, di, ai}, Vector3.up * height, bs.uvScale));
+                    layer.ExtrudeEdges(new List<Vector3> {ai, bi, ci, di, ai}, Vector3.up * height, bs.uvScale);
                     if (bs.addFloor) {
                         Face floor = new Face(ai, bi, ci, di);
                         floor.SetUVFront(width * bs.uvScale, height * bs.uvScale);
@@ -84,7 +84,7 @@ namespace ProceduralStructures {
                     }
                 } else {
                     lastLayerIsHollow = false;
-                    layer.AddFaces(Builder.ExtrudeEdges(new List<Vector3> {a, d, c, b, a}, Vector3.up * height, bs.uvScale));
+                    layer.ExtrudeEdges(new List<Vector3> {a, d, c, b, a}, Vector3.up * height, bs.uvScale);
                     foreach (HouseDefinition.WallCutout co in bs.cutouts) {
                         //layer.CutFront(co.dimension, bs.uvScale);
                         Vector3 origin = center + new Vector3(co.dimension.x, co.dimension.y + co.dimension.height/2, 0);
@@ -97,12 +97,10 @@ namespace ProceduralStructures {
                         layer.MakeHole(origin, direction, Vector3.up, co.dimension.width, co.dimension.height);
                         Face opening = layer.FindFirstFaceByTag(Builder.CUTOUT);
                         if (opening != null) {
-                            layer.RemoveFace(opening);
-                            layer.AddFaces(Builder.IndentFace(opening, Vector3.forward * 0.1f, co.uvScale));
-                            layer.RemoveFace(opening);
+                            layer.IndentFace(opening, Vector3.forward * 0.1f, co.uvScale);
+                            opening.material = co.material;
                             opening.SetUVForSize(co.uvScale);
                             opening.UnTag(Builder.CUTOUT);
-                            building.AddFace(opening, co.material);
                         } else {
                             Debug.Log("no opening found for " + co.name);
                         }
@@ -138,7 +136,7 @@ namespace ProceduralStructures {
                         Face floor = Face.CreateXZPlane(stairs.baseWidth,stairs.baseLength);
                         floor.SetUVFront(stairs.baseWidth * stairs.uvScale, stairs.baseLength * stairs.uvScale);
                         BuildingObject stairsBlock = new BuildingObject();
-                        //stairsBlock.position = stairsPosition;
+                        stairsBlock.material = stairs.material;
                         stairsBlock.rotation = stairsRotation;
                         stairsBlock.AddFace(floor);
                         Vector3 dn = Vector3.down * stairs.stepHeight;
@@ -152,7 +150,7 @@ namespace ProceduralStructures {
                         //Debug.Log("stairs ou=" + ou + ", si=" + si);
                         while (currentHeight < stairs.totalHeight) {
                             // extrude down
-                            stairsBlock.AddFaces(Builder.ExtrudeEdges(new List<Vector3> {stepC, stepD, stepA, stepB}, dn, stairs.uvScale));
+                            stairsBlock.ExtrudeEdges(new List<Vector3> {stepC, stepD, stepA, stepB}, dn, stairs.uvScale);
                             stepC += dn;
                             stepD += dn;
                             stepA += dn;
@@ -161,17 +159,17 @@ namespace ProceduralStructures {
                             if (currentHeight >= stairs.totalHeight) break;
                             // extrude step
                             if (ou.sqrMagnitude > 0) {
-                                stairsBlock.AddFaces(Builder.ExtrudeEdges(new List<Vector3> {stepD, stepA}, ou, stairs.uvScale));
+                                stairsBlock.ExtrudeEdges(new List<Vector3> {stepD, stepA}, ou, stairs.uvScale);
                                 stepD += ou;
                                 stepA += ou;
                             }
                             if (si.sqrMagnitude > 0) {
                                 if (stairs.descentAngle > 0) {
-                                    stairsBlock.AddFaces(Builder.ExtrudeEdges(new List<Vector3> {stepC, stepD}, si, stairs.uvScale));
+                                    stairsBlock.ExtrudeEdges(new List<Vector3> {stepC, stepD}, si, stairs.uvScale);
                                     stepC += si;
                                     stepD += si;
                                 } else {
-                                    stairsBlock.AddFaces(Builder.ExtrudeEdges(new List<Vector3> {stepA, stepB}, si, stairs.uvScale));
+                                    stairsBlock.ExtrudeEdges(new List<Vector3> {stepA, stepB}, si, stairs.uvScale);
                                     stepA += si;
                                     stepB += si;
                                 }
@@ -179,7 +177,7 @@ namespace ProceduralStructures {
                         }
 
                         stairsBlock.SetUVBoxProjection(stairs.uvScale);
-                        
+
                         float zOffset = length/2;
                         if (stairs.side == HouseDefinition.Side.Left || stairs.side == HouseDefinition.Side.Right) {
                             zOffset = width/2;
@@ -200,14 +198,17 @@ namespace ProceduralStructures {
                             }
                         }
                         //Debug.Log("stairs position: " + stairsBlock.position);
-                        building.AddObject(stairsBlock, stairs.material);
+                        building.AddObject(stairsBlock);
                     }
                 }
-                building.AddObject(layer, bs.material);
+                layer.material = bs.material;
+                building.AddObject(layer);
                 center.y += height;
             }
 
             if (house.roofHeight > 0) {
+                BuildingObject roofLayer = new BuildingObject();
+                roofLayer.material = house.materialGable;
                 Vector3 a = center + new Vector3(-width/2, 0, -length/2);
                 Vector3 b = center + new Vector3(-width/2, 0, length/2);
                 Vector3 c = center + new Vector3(width/2, 0, length/2);
@@ -218,46 +219,46 @@ namespace ProceduralStructures {
                 Vector3 e2 = center + new Vector3(0, house.roofHeight, length/2);
                 Face frontFace = new Face(a, e1, d);
                 frontFace.SetUVFront(width * uvScale, house.roofHeight * uvScale);
-                building.AddFace(frontFace, house.materialGable);
+                roofLayer.AddFace(frontFace);
                 Face backface = new Face(c, e2, b);
                 backface.SetUVFront(width * uvScale, house.roofHeight * uvScale);
-                building.AddFace(backface, house.materialGable);
+                roofLayer.AddFace(backface);
                 
                 if (lastLayerIsHollow) {
                     Face innerFrontFace = frontFace.DeepCopy();
                     innerFrontFace.MoveFaceBy(Vector3.forward * lastWallThickness).InvertNormals();
                     Face innerBackFace = backface.DeepCopy().MoveFaceBy(Vector3.back * lastWallThickness).InvertNormals();
-                    building.AddFace(innerFrontFace, house.materialGable);
-                    building.AddFace(innerBackFace, house.materialGable);
+                    roofLayer.AddFace(innerFrontFace);
+                    roofLayer.AddFace(innerBackFace);
                     Face innerLeftRoof = new Face(b, a, e1, e2);
                     float h = Mathf.Sqrt(width/2 * width/2 + house.roofHeight * house.roofHeight);
                     innerLeftRoof.SetUVFront(length * uvScale, h * uvScale);
                     Face innerRightRoof = new Face(d, c, e2, e1);
                     innerRightRoof.SetUVFront(length * uvScale, h * uvScale);
-                    building.AddFace(innerLeftRoof, house.materialGable);
-                    building.AddFace(innerRightRoof, house.materialGable);
+                    roofLayer.AddFace(innerLeftRoof);
+                    roofLayer.AddFace(innerRightRoof);
                     Face innerLeftTopWall = new Face(a,b, b+Vector3.right * lastWallThickness, a+Vector3.right * lastWallThickness);
                     innerLeftTopWall.SetUVFront(lastWallThickness, length);
                     Face innerRightTopWall = new Face(d+Vector3.left * lastWallThickness, c+Vector3.left * lastWallThickness, c, d);
                     innerRightTopWall.SetUVFront(lastWallThickness, length);
-                    building.AddFace(innerLeftTopWall, house.materialGable);
-                    building.AddFace(innerRightTopWall, house.materialGable);
+                    roofLayer.AddFace(innerLeftTopWall);
+                    roofLayer.AddFace(innerRightTopWall);
                 }
 
                 Vector3 extZ = new Vector3(0, 0, house.roofExtendZ);
                 if (house.roofExtendZ > 0) {
                     Face rightBackExtend = new Face(e2, c, c + extZ, e2 + extZ);
                     rightBackExtend.SetUVFront(house.roofExtendZ * uvScale, width/2 * uvScale);
-                    building.AddFace(rightBackExtend, house.materialGable);
+                    roofLayer.AddFace(rightBackExtend);
                     Face rightFrontExtend = new Face(e1 - extZ, d - extZ, d, e1);
                     rightFrontExtend.SetUVFront(house.roofExtendZ * uvScale, width/2 * uvScale);
-                    building.AddFace(rightFrontExtend, house.materialGable);
+                    roofLayer.AddFace(rightFrontExtend);
                     Face leftBackExtend = new Face(b, e2, e2 + extZ, b + extZ);
                     leftBackExtend.SetUVFront(house.roofExtendZ * uvScale, width/2 * uvScale);
-                    building.AddFace(leftBackExtend, house.materialGable);
+                    roofLayer.AddFace(leftBackExtend);
                     Face leftFrontExtend = new Face(a - extZ, e1 - extZ, e1, a);
                     leftFrontExtend.SetUVFront(house.roofExtendZ * uvScale, width/2 * uvScale);
-                    building.AddFace(leftFrontExtend, house.materialGable);
+                    roofLayer.AddFace(leftFrontExtend);
                     e2 = e2 + extZ;
                     e1 = e1 - extZ;
                 }
@@ -270,20 +271,20 @@ namespace ProceduralStructures {
                     Vector3 extX = new Vector3(house.roofExtendX, house.roofExtendX * m, 0);
                     Face rightExtend = new Face(dr, dr+extX, cr+extX, cr);
                     rightExtend.SetUVFront(length * uvScale, house.roofExtendX * uvScale);
-                    building.AddFace(rightExtend, house.materialGable);
+                    roofLayer.AddFace(rightExtend);
                     dr = dr + extX;
                     cr = cr + extX;
                     extX = new Vector3(-house.roofExtendX, house.roofExtendX * m, 0);
                     Face leftExtend = new Face(br, br+extX, ar+extX, ar);
                     leftExtend.SetUVFront(length * uvScale, house.roofExtendX * uvScale);
-                    building.AddFace(leftExtend, house.materialGable);
+                    roofLayer.AddFace(leftExtend);
                     br = br + extX;
                     ar = ar + extX;
                 }
 
                 Vector3 roofThickness = new Vector3(0, house.roofThickness, 0);
                 List<Vector3> roofEdges = new List<Vector3> {ar, e1, dr, cr, e2, br, ar};
-                building.AddFaces(Builder.ExtrudeEdges(roofEdges, roofThickness, uvScale), house.materialGable);
+                roofLayer.ExtrudeEdges(roofEdges, roofThickness, uvScale);
 
                 ar = ar + roofThickness;
                 br = br + roofThickness;
@@ -296,10 +297,13 @@ namespace ProceduralStructures {
                 Face leftRoof = new Face(br, e2, e1, ar);
                 float halfSlope = Mathf.Sqrt(width/2 * width/2 + house.roofHeight * house.roofHeight);
                 leftRoof.SetUVFront((length + 2 * house.roofExtendZ) * uvScale, halfSlope * uvScale);
-                building.AddFace(leftRoof, house.materialRoof);
+                leftRoof.material = house.materialRoof;
+                building.AddFace(leftRoof);
                 Face rightRoof = new Face(dr, e1, e2, cr);
                 rightRoof.SetUVFront((length + 2 * house.roofExtendZ) * uvScale, halfSlope * uvScale);
-                building.AddFace(rightRoof, house.materialRoof);
+                rightRoof.material = house.materialRoof;
+                building.AddFace(rightRoof);
+                building.AddObject(roofLayer);
             }
 
             string name = "LOD" + lod;
