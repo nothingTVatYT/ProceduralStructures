@@ -86,6 +86,22 @@ namespace ProceduralStructures {
             return bounds;
         }
 
+        public BuildingObject SetUVBoxProjection(float uvScale) {
+            List<Face> connectedFaces = new List<Face>();
+            foreach (Face face in faces) {
+                float dlr = Mathf.Abs(Vector3.Dot(face.normal, Vector3.left));
+                float dfb = Mathf.Abs(Vector3.Dot(face.normal, Vector3.back));
+                float dud = Mathf.Abs(Vector3.Dot(face.normal, Vector3.up));
+                face.uvA = new Vector2((dlr*face.a.z + dfb*face.a.x + dud*face.a.x) * uvScale, (dlr*face.a.y + dfb*face.a.y + dud*face.a.z) * uvScale);
+                face.uvB = new Vector2((dlr*face.b.z + dfb*face.b.x + dud*face.b.x) * uvScale, (dlr*face.b.y + dfb*face.b.y + dud*face.b.z) * uvScale);
+                face.uvC = new Vector2((dlr*face.c.z + dfb*face.c.x + dud*face.c.x) * uvScale, (dlr*face.c.y + dfb*face.c.y + dud*face.c.z) * uvScale);
+                if (!face.isTriangle) {
+                    face.uvD = new Vector2((dlr*face.d.z + dfb*face.d.x + dud*face.d.x) * uvScale, (dlr*face.d.y + dfb*face.d.y + dud*face.d.z) * uvScale);
+                }
+            }
+            return this;
+        }
+
         public BuildingObject MakeHole(Vector3 origin, Vector3 direction, Vector3 up, float width, float height) {
             List<Face> result = new List<Face>();
             Vector3 intersection;

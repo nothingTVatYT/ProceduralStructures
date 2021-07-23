@@ -16,6 +16,10 @@ namespace ProceduralStructures {
             LOD lod1 = new LOD(0.1f, go1.GetComponentsInChildren<MeshRenderer>());
             lodGroup.SetLODs(new LOD[] { lod0, lod1 });
             lodGroup.RecalculateBounds();
+            MeshCollider[] colliders = go1.GetComponentsInChildren<MeshCollider>();
+            foreach (MeshCollider collider in colliders) {
+                collider.enabled = false;
+            }
         }
 
         // the lod integer should be 0 to build the complete house and with higher levels we add less details
@@ -174,7 +178,8 @@ namespace ProceduralStructures {
                             }
                         }
 
-                        //stairsBlock.TranslatePosition(new Vector3(stairs.baseWidth/2 + stairs.offset, stairs.baseHeight, -stairs.baseLength/2));
+                        stairsBlock.SetUVBoxProjection(stairs.uvScale);
+                        
                         float zOffset = length/2;
                         if (stairs.side == HouseDefinition.Side.Left || stairs.side == HouseDefinition.Side.Right) {
                             zOffset = width/2;
