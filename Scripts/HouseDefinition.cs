@@ -14,6 +14,7 @@ public class HouseDefinition : ScriptableObject
         public Rect dimension;
         public Material material;
         public float uvScale = 1;
+        public GameObject prefab;
     }
 
     [Serializable]
@@ -60,7 +61,6 @@ public class HouseDefinition : ScriptableObject
 
     [Header("Roof")]
     public float roofHeight;
-    public float gableWidth;
     public Material materialRoof;
     public float uvScaleRoof = 1;
     public Material materialGable;

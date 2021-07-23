@@ -3,6 +3,7 @@ using UnityEngine;
 
 namespace ProceduralStructures {
     public class ProceduralHouse {
+
         public void RebuildHouseWithInterior(HouseDefinition house, GameObject target) {
             RebuildHouseWithInterior(house, target, 0);
             RebuildHouseWithInterior(house, target, 1);
@@ -81,6 +82,12 @@ namespace ProceduralStructures {
                             case HouseDefinition.Side.Back: direction = Vector3.forward; break;
                         }
                         layer.MakeHole(origin, direction, Vector3.up, co.dimension.width, co.dimension.height);
+                        if (co.prefab != null) {
+                            GameObject objectInHole = GameObject.Instantiate(co.prefab);
+                            objectInHole.transform.parent = target.transform;
+                            objectInHole.transform.localPosition = center + new Vector3(co.dimension.x, co.dimension.y, 0) + direction*length/2;
+                            objectInHole.transform.localRotation = RotationFromSide(co.side);
+                        }
                     }
                 } else {
                     lastLayerIsHollow = false;
@@ -313,6 +320,15 @@ namespace ProceduralStructures {
                 lodMeshes.transform.rotation = target.transform.rotation;
             }
             building.Build(lodMeshes);
+        }
+
+        Quaternion RotationFromSide(HouseDefinition.Side side) {
+            switch (side) {
+                case HouseDefinition.Side.Front: return Quaternion.AngleAxis(180, Vector3.up);
+                case HouseDefinition.Side.Right: return Quaternion.AngleAxis(-90, Vector3.up);
+                case HouseDefinition.Side.Left: return Quaternion.AngleAxis(90, Vector3.up);
+            }
+            return Quaternion.identity;
         }
     }
 }
