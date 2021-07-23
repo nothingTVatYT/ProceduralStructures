@@ -1,0 +1,105 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: dd511a36ed4483a51873f1885d21573b, type: 3}
+  m_Name: CornerHouse
+  m_EditorClassIdentifier: 
+  heightOffset: -2
+  width: 6
+  length: 6
+  layers:
+  - name: Basement
+    height: 2
+    hollow: 0
+    addCeiling: 1
+    addFloor: 0
+    wallThickness: 0
+    slopeX: 0
+    slopeZ: 0
+    material: {fileID: 2100000, guid: ae42858ea84df3d4c80e04db974d7179, type: 2}
+    uvScale: 1
+    cutouts: []
+    stairs: []
+  - name: Ground Floor
+    height: 3
+    hollow: 1
+    addCeiling: 1
+    addFloor: 0
+    wallThickness: 0.3
+    slopeX: 0
+    slopeZ: 0
+    material: {fileID: 2100000, guid: ae42858ea84df3d4c80e04db974d7179, type: 2}
+    uvScale: 1
+    cutouts:
+    - name: Door1
+      side: 0
+      dimension:
+        serializedVersion: 2
+        x: 0
+        y: 0.1
+        width: 2
+        height: 2.2
+      material: {fileID: 2100000, guid: 1ba65a59041a6d0448ce7b2b8605bd5a, type: 2}
+      uvScale: 0.5
+    - name: Door2
+      side: 3
+      dimension:
+        serializedVersion: 2
+        x: 0
+        y: 0.1
+        width: 2
+        height: 2.2
+      material: {fileID: 2100000, guid: 1ba65a59041a6d0448ce7b2b8605bd5a, type: 2}
+      uvScale: 0.5
+    - name: Door3
+      side: 1
+      dimension:
+        serializedVersion: 2
+        x: 0
+        y: 0.1
+        width: 2
+        height: 2.2
+      material: {fileID: 2100000, guid: 1ba65a59041a6d0448ce7b2b8605bd5a, type: 2}
+      uvScale: 0.5
+    stairs: []
+  - name: Second Floor
+    height: 3
+    hollow: 0
+    addCeiling: 0
+    addFloor: 0
+    wallThickness: 0.3
+    slopeX: 0
+    slopeZ: 0
+    material: {fileID: 2100000, guid: ae42858ea84df3d4c80e04db974d7179, type: 2}
+    uvScale: 1
+    cutouts: []
+    stairs: []
+  - name: Third Floor
+    height: 3
+    hollow: 0
+    addCeiling: 0
+    addFloor: 0
+    wallThickness: 0.3
+    slopeX: 0
+    slopeZ: 0
+    material: {fileID: 2100000, guid: ae42858ea84df3d4c80e04db974d7179, type: 2}
+    uvScale: 1
+    cutouts: []
+    stairs: []
+  roofHeight: 1
+  gableWidth: 0
+  materialRoof: {fileID: 2100000, guid: d566042ee4cf61a65936ea503b1733d5, type: 2}
+  uvScaleRoof: 1
+  materialGable: {fileID: 2100000, guid: ae42858ea84df3d4c80e04db974d7179, type: 2}
+  uvScaleGable: 1
+  roofExtendX: 0.5
+  roofExtendZ: 0.5
+  roofThickness: 0.2
