@@ -3,6 +3,14 @@ using UnityEngine;
 namespace ProceduralStructures {
     public class Face
     {
+        public Vector3 a,b,c,d;
+        public Vector2 uvA,uvB,uvC,uvD;
+        public Vector3 normal { get { return Vector3.Cross(b-a, (isTriangle ? c : d)-a).normalized;} }
+        public bool isTriangle = false;
+        public int tags = 0;
+        public float sortOrder = 0;
+        public Material material;
+
         public Face() {}
         public Face(Vector3 a, Vector3 b, Vector3 c, Vector3 d) {
             this.a = a;
@@ -30,12 +38,6 @@ namespace ProceduralStructures {
                 new Vector3(width/2, 0, -length/2));
         }
 
-        public Vector3 a,b,c,d;
-        public Vector2 uvA,uvB,uvC,uvD;
-        public Vector3 normal { get { return Vector3.Cross(b-a, (isTriangle ? c : d)-a).normalized;} }
-        public bool isTriangle = false;
-        public int tags = 0;
-        public float sortOrder = 0;
         public Vector3[] GetVertices() {
             return new Vector3[] { a, b, c, d };
         }
@@ -56,6 +58,7 @@ namespace ProceduralStructures {
             n.uvD = uvD;
             n.tags = tags;
             n.sortOrder = sortOrder;
+            n.material = material;
             return n;
         }
 

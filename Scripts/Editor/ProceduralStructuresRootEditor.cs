@@ -14,7 +14,7 @@ public class ProceduralStructuresRootEditor : Editor
                 Debug.Log("Found " + builder.Length + " house builders.");
                 ProceduralStructures.ProceduralHouse p = new ProceduralStructures.ProceduralHouse();
                 foreach (HouseBuilder h in builder) {
-                    p.RebuildHouse(h.houseDefinition, h.gameObject);
+                    p.RebuildHouseWithInterior(h.houseDefinition, h.gameObject);
                 }
             } else {
                 Debug.Log("No builders were found.");

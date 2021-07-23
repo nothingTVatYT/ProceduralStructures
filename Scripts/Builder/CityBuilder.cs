@@ -59,21 +59,34 @@ namespace ProceduralStructures {
                         continue;
                     }
                     bool removeIt = false;
-                    Vector3 test1 = go.transform.InverseTransformPoint(boundingCenter2W);
-                    if (bounds.Contains(test1)) {
-                        removeIt = true;
+                    // test current building to previous
+                    foreach (Vector3 testVector in new Vector3[] {
+                        boundingCenter2,
+                        boundingCenter2 + new Vector3(boundingBoxSize2.x/2, 0, boundingBoxSize2.z/2),
+                        boundingCenter2 + new Vector3(-boundingBoxSize2.x/2, 0, boundingBoxSize2.z/2),
+                        boundingCenter2 + new Vector3(boundingBoxSize2.x/2, 0, -boundingBoxSize2.z/2),
+                        boundingCenter2 + new Vector3(-boundingBoxSize2.x/2, 0, -boundingBoxSize2.z/2),
+                    }) {
+                        Vector3 world = generated[j].transform.TransformPoint(testVector);
+                        Vector3 local = go.transform.InverseTransformPoint(world);
+                        removeIt = bounds.Contains(local);
+                        if (removeIt) break;
                     }
-                    if (!removeIt && bounds.Contains(go.transform.InverseTransformPoint(generated[j].transform.TransformPoint(boundingCenter2 + new Vector3(boundingBoxSize2.x/2, 0, boundingBoxSize2.z/2))))) {
-                        removeIt = true;
-                    }
-                    if (!removeIt && bounds.Contains(go.transform.InverseTransformPoint(generated[j].transform.TransformPoint(boundingCenter2 + new Vector3(-boundingBoxSize2.x/2, 0, boundingBoxSize2.z/2))))) {
-                        removeIt = true;
-                    }
-                    if (!removeIt && bounds.Contains(go.transform.InverseTransformPoint(generated[j].transform.TransformPoint(boundingCenter2 + new Vector3(boundingBoxSize2.x/2, 0, -boundingBoxSize2.z/2))))) {
-                        removeIt = true;
-                    }
-                    if (!removeIt && bounds.Contains(go.transform.InverseTransformPoint(generated[j].transform.TransformPoint(boundingCenter2 + new Vector3(-boundingBoxSize2.x/2, 0, -boundingBoxSize2.z/2))))) {
-                        removeIt = true;
+                    if (!removeIt) {
+                        // test previous to current
+                        Bounds bounds2 = new Bounds(boundingCenter2, boundingBoxSize2);
+                        foreach (Vector3 testVector in new Vector3[] {
+                            boundingCenter,
+                            boundingCenter + new Vector3(boundingBoxSize.x/2, 0, boundingBoxSize.z/2),
+                            boundingCenter + new Vector3(-boundingBoxSize.x/2, 0, boundingBoxSize.z/2),
+                            boundingCenter + new Vector3(boundingBoxSize.x/2, 0, -boundingBoxSize.z/2),
+                            boundingCenter + new Vector3(-boundingBoxSize.x/2, 0, -boundingBoxSize.z/2),
+                        }) {
+                            Vector3 world = go.transform.TransformPoint(testVector);
+                            Vector3 local = generated[j].transform.InverseTransformPoint(world);
+                            removeIt = bounds2.Contains(local);
+                            if (removeIt) break;
+                        }
                     }
                     if (removeIt) {
                         go.SetActive(false);
@@ -106,6 +119,18 @@ namespace ProceduralStructures {
             Vector3 a = segment[0];
             Vector3 b = segment[1];
             return Vector3.Cross(a-b, Vector3.up).normalized;
+        }
+
+        public void RemoveHouses(CityDefinition city) {
+            for (int i = city.parent.transform.childCount-1; i>=0; i--) {
+                GameObject go = city.parent.transform.GetChild(i).gameObject;
+                if (Application.isPlaying) {
+                    //Object.Destroy(go);
+                } else {
+                    Object.DestroyImmediate(go);
+                }
+            }
+
         }
     }
 }

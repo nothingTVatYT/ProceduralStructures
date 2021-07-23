@@ -16,6 +16,7 @@ namespace ProceduralStructures {
                 if (!firstVertex) {
                     Face face1 = new Face(prev, prev + direction, v + direction, v);
                     face1.SetUVFront(Vector3.Distance(prev, v) * uvScale, el * uvScale);
+                    face1.material = face.material;
                     faces.Add(face1);
                 }
                 prev = v;
@@ -23,66 +24,6 @@ namespace ProceduralStructures {
             }
             faces.Add(face.MoveFaceBy(direction));
             return faces;
-        }
-
-        public static List<Face> Cutout(List<Face> fromFaces, Rect dim, Vector3 cutoutOrigin, float uvScale) {
-            List<Face> result = new List<Face>();
-            // project the 2D rect on this face (the normal needs to point to Vector3.back)
-            // the z is not used so we don't care
-            // check which faces are affected
-            Quaternion localToWorld = Quaternion.identity;
-            foreach (Face face in fromFaces) {
-                List<Face> n = new List<Face>();
-                // is the normal of this face already pointing to us?
-                Quaternion rotation = Quaternion.identity;
-                if (face.normal != Vector3.back) {
-                    Vector3 originalDirection = face.normal;
-                    rotation = Quaternion.FromToRotation(originalDirection, Vector3.back);
-                    face.Rotate(rotation);
-                    localToWorld = Quaternion.FromToRotation(Vector3.back, originalDirection);
-                }
-                Vector3 localOrigin = rotation * cutoutOrigin;
-                Face cutoutFace = ProjectRectOnFrontFace(dim, 0).MoveFaceBy(localOrigin);
-                // is the cutout part of this face?
-                if (cutoutFace.a.x >= face.a.x && cutoutFace.a.y >= face.a.y && cutoutFace.c.x <= face.c.x && cutoutFace.c.y <= face.c.y) {
-                    // slice the face into 9 parts leaving the center piece at the size of the cutout
-                    Face[] nf = SliceFace(face, cutoutFace.a.x - face.a.x, 0);
-
-                    Face leftColumn = nf[0];
-                    Face[] nf2 = SliceFace(nf[1], cutoutFace.d.x - nf[1].a.x, 0);
-                    Face middleColumn = nf2[0];
-                    Face rightColumn = nf2[1];
-                    
-                    nf = SliceFace(leftColumn, 0, cutoutFace.a.y - leftColumn.a.y);
-                    n.Add(nf[0]); // bottom left corner
-                    nf2 = SliceFace(nf[1], 0, cutoutFace.b.y-nf[1].a.y);
-                    n.Add(nf2[1]); // top left corner
-                    n.Add(nf2[0]); // left middle
-
-                    nf = SliceFace(middleColumn, 0, cutoutFace.a.y - middleColumn.a.y);
-                    n.Add(nf[0]); // bottom center
-                    nf2 = SliceFace(nf[1], 0, cutoutFace.b.y - nf[1].a.y);
-                    //result.Add(nf2[0]); // center
-                    nf2[0].Tag(CUTOUT);
-                    n.AddRange(IndentFace(nf2[0], new Vector3(0, 0, 0.3f), uvScale));
-                    n.Add(nf2[1]); // top center
-                    nf = SliceFace(rightColumn, 0, cutoutFace.a.y-rightColumn.a.y);
-                    n.Add(nf[0]); // bottom right corner
-                    nf2 = SliceFace(nf[1], 0, cutoutFace.b.y-nf[1].a.y);
-                    n.Add(nf2[0]); // right middle
-                    n.Add(nf2[1]); // top right corner
-                    foreach (Face turned in n) {
-                        turned.Rotate(localToWorld);
-                    }
-                    result.AddRange(n);
-                } else {
-                    Debug.Log("cutout is not part of this face. cutout=" + cutoutFace + ", face=" + face);
-                    // rotate it back
-                    face.Rotate(localToWorld);
-                    result.Add(face);
-                }
-            }
-            return result;
         }
 
         public static Face[] SplitFaceABCD(Face face, float rAB, float rCD) {
@@ -98,6 +39,8 @@ namespace ProceduralStructures {
             f2.uvB = f1.uvA;
             f2.uvC = f1.uvD;
             f2.uvD = face.uvD;
+            f1.material = face.material;
+            f2.material = face.material;
             return new Face[] { f1, f2 };
         }
 
@@ -114,48 +57,9 @@ namespace ProceduralStructures {
             f2.uvB = f1.uvC;
             f2.uvC = face.uvC;
             f2.uvD = face.uvD;
+            f1.material = face.material;
+            f2.material = face.material;
             return new Face[] { f1, f2 };
-        }
-
-        public static Face[] SliceFace(Face face, Vector3 v0, Vector3 v1) {
-            if (Vector3.Dot(face.d-face.a, v1-face.a) < 0.999f) {
-                Debug.Log("Slicing v1 " + v1 + " is not on DA [" + face.d + "," + face.a + "]");
-            }
-            if (Vector3.Dot(face.c-face.b, v0-face.b) < 0.999f) {
-                Debug.Log("Slicing v0 " + v0 + " is not on CB [" + face.c + "," + face.b + "]");
-            }
-            Face left = new Face(face.a, face.b, v0, v1);
-            float relU = (v1 - face.a).magnitude/(face.d - face.a).magnitude;
-            left.uvA = face.uvA;
-            left.uvB = face.uvB;
-            left.uvC = Vector2.Lerp(face.uvB, face.uvC, relU);
-            left.uvD = Vector2.Lerp(face.uvA, face.uvD, relU);
-            Face right = new Face(v1, v0, face.c, face.d);
-            right.uvA = left.uvD;
-            right.uvB = left.uvC;
-            right.uvC = face.uvC;
-            right.uvD = face.uvD;
-            return new Face[] {left, right};
-        }
-
-        public static Face[] SliceFaceHorizontally(Face face, float relY) {
-            if (relY < 0 || relY > 1) {
-                Debug.Log("Slicing relY is invalid: " + relY);
-            }
-            Vector3 v0 = Vector3.Lerp(face.a, face.b, relY);
-            Vector3 v1 = Vector3.Lerp(face.d, face.c, relY);
-            Face bottom = new Face(face.a, v0, v1, face.d);
-            float relU = (v0 - face.a).magnitude/(face.b - face.a).magnitude;
-            bottom.uvA = face.uvA;
-            bottom.uvB = Vector2.Lerp(face.uvA, face.uvB, relU);
-            bottom.uvC = Vector2.Lerp(face.uvD, face.uvC, relU);
-            bottom.uvD = face.uvD;
-            Face top = new Face(v0, face.b, face.c, v1);
-            top.uvA = bottom.uvB;
-            top.uvB = face.uvB;
-            top.uvC = face.uvC;
-            top.uvD = bottom.uvC;
-            return new Face[] {bottom, top};
         }
 
         public static Face[] SliceFace(Face face, float dx, float dy) {

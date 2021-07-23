@@ -31,5 +31,9 @@ public class CityEditor : Editor
             CityBuilder cityBuilder = new CityBuilder();
             cityBuilder.PlaceHouses(city.cityDefinition);
         }
+        if (GUILayout.Button("Remove buildings")) {
+            CityBuilder cityBuilder = new CityBuilder();
+            cityBuilder.RemoveHouses(city.cityDefinition);
+        }
     }
 }
