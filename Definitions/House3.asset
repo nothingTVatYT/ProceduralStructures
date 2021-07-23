@@ -52,7 +52,7 @@ MonoBehaviour:
     stairs:
     - side: 0
       inside: 0
-      offset: 0
+      offset: -1
       baseWidth: 3
       baseLength: 0.4
       baseHeight: 0

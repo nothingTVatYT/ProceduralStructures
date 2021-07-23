@@ -18,6 +18,10 @@ MonoBehaviour:
   layers:
   - name: Basement
     height: 2.2
+    hollow: 0
+    addCeiling: 0
+    addFloor: 1
+    wallThickness: 0.5
     slopeX: 0.1
     slopeZ: 0.1
     material: {fileID: 2100000, guid: 3f7f4e07f8ffed27e94b8c743779b0e0, type: 2}
@@ -26,6 +30,10 @@ MonoBehaviour:
     stairs: []
   - name: Ground Floor
     height: 3
+    hollow: 1
+    addCeiling: 0
+    addFloor: 1
+    wallThickness: 0.5
     slopeX: 0
     slopeZ: 0
     material: {fileID: 2100000, guid: 3f7f4e07f8ffed27e94b8c743779b0e0, type: 2}
@@ -35,15 +43,16 @@ MonoBehaviour:
       side: 0
       dimension:
         serializedVersion: 2
-        x: 3
+        x: -2.2
         y: 0.2
         width: 1.2
         height: 2.6
       material: {fileID: 2100000, guid: dafe3ff78cecef3449c7897b8575e23e, type: 2}
-      uvScale: 1
+      uvScale: 0.5
     stairs:
     - side: 0
-      offset: 2.8
+      inside: 0
+      offset: -2.2
       baseWidth: 1.4
       baseLength: 0.5
       baseHeight: 0

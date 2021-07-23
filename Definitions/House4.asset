@@ -13,11 +13,15 @@ MonoBehaviour:
   m_Name: House4
   m_EditorClassIdentifier: 
   heightOffset: -2
-  width: 4
-  length: 6
+  width: 5
+  length: 7
   layers:
   - name: Basement
     height: 2.3
+    hollow: 0
+    addCeiling: 0
+    addFloor: 1
+    wallThickness: 0.5
     slopeX: 0.1
     slopeZ: 0.1
     material: {fileID: 2100000, guid: 9e2aae7ee83e19d468a3f2d21f2fe4ae, type: 2}
@@ -26,6 +30,10 @@ MonoBehaviour:
     stairs: []
   - name: Ground Floor
     height: 3
+    hollow: 1
+    addCeiling: 0
+    addFloor: 1
+    wallThickness: 0.5
     slopeX: 0
     slopeZ: 0
     material: {fileID: 2100000, guid: ef3aeaa0049cbe447969df3bee614da1, type: 2}
@@ -35,7 +43,7 @@ MonoBehaviour:
       side: 0
       dimension:
         serializedVersion: 2
-        x: 1.3
+        x: 0.8
         y: 0.2
         width: 1
         height: 2.4
@@ -43,6 +51,7 @@ MonoBehaviour:
       uvScale: 0.5
     stairs:
     - side: 0
+      inside: 0
       offset: 1.3
       baseWidth: 1
       baseLength: 0.2
