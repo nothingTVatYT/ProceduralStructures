@@ -338,7 +338,7 @@ namespace ProceduralStructures {
                 added.transform.parent = target.transform;
                 added.transform.localPosition = Vector3.zero;
                 added.transform.localRotation = Quaternion.identity;
-                added.transform.localScale = Vector3.zero;
+                added.transform.localScale = Vector3.one;
                 added.name = Building.ADDED_INTERIOR;
             }
             return added;
