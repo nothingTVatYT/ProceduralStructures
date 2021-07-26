@@ -47,11 +47,11 @@ MonoBehaviour:
         y: 0.2
         width: 1.2
         height: 2.4
-      material: {fileID: 2100000, guid: dafe3ff78cecef3449c7897b8575e23e, type: 2}
+      material: {fileID: 2100000, guid: 1e8afc4701380a98abee3ad10f39e1fb, type: 2}
       uvScale: 0.5
+      prefab: {fileID: 0}
     stairs: []
   roofHeight: 2.7
-  gableWidth: 1
   materialRoof: {fileID: 2100000, guid: 8b8afc5fb03ee31ed958081cd13e1899, type: 2}
   uvScaleRoof: 0.15
   materialGable: {fileID: 2100000, guid: c7cf82375adb9519c8b9db5ecfb87a24, type: 2}
