@@ -74,18 +74,25 @@ namespace ProceduralStructures {
                         layer.AddFace(ceiling);
                     }
                     foreach (HouseDefinition.WallCutout co in bs.cutouts) {
-                        Vector3 origin = center + new Vector3(co.dimension.x, co.dimension.y + co.dimension.height/2, 0);
+                        Vector3 origin = center + new Vector3(0, co.dimension.y + co.dimension.height/2, 0);
                         Vector3 direction = Vector3.back;
                         switch(co.side) {
                             case HouseDefinition.Side.Right: direction = Vector3.right; break;
                             case HouseDefinition.Side.Left: direction = Vector3.left; break;
                             case HouseDefinition.Side.Back: direction = Vector3.forward; break;
                         }
+                        Vector3 localRight = Vector3.Cross(direction, Vector3.up);
+                        origin += localRight * co.dimension.x;
                         layer.MakeHole(origin, direction, Vector3.up, co.dimension.width, co.dimension.height);
                         if (co.prefab != null) {
                             GameObject objectInHole = GameObject.Instantiate(co.prefab);
                             objectInHole.transform.parent = AddedInterior(target).transform;
-                            objectInHole.transform.localPosition = center + new Vector3(co.dimension.x, co.dimension.y, 0) + direction*length/2;
+                            //objectInHole.transform.localPosition = center + new Vector3(co.dimension.x, co.dimension.y, 0) + direction*length/2;
+                            float distance = length/2 + 0.1f;
+                            if (co.side == HouseDefinition.Side.Left || co.side == HouseDefinition.Side.Right) {
+                                distance = width/2 - 0.2f;
+                            }
+                            objectInHole.transform.localPosition = origin - new Vector3(0, co.dimension.height/2, 0) + direction*distance;
                             objectInHole.transform.localRotation = RotationFromSide(co.side);
                         }
                     }
@@ -318,6 +325,7 @@ namespace ProceduralStructures {
                 lodMeshes.transform.parent = target.transform;
                 lodMeshes.transform.position = target.transform.position;
                 lodMeshes.transform.rotation = target.transform.rotation;
+                lodMeshes.isStatic = target.isStatic;
             }
             building.Build(lodMeshes);
         }
@@ -339,6 +347,7 @@ namespace ProceduralStructures {
                 added.transform.localPosition = Vector3.zero;
                 added.transform.localRotation = Quaternion.identity;
                 added.transform.localScale = Vector3.one;
+                added.isStatic = target.isStatic;
                 added.name = Building.ADDED_INTERIOR;
             }
             return added;
