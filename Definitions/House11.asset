@@ -46,9 +46,11 @@ MonoBehaviour:
         x: 1
         y: 0.1
         width: 1.2
-        height: 2.4
+        height: 2.2
       material: {fileID: 2100000, guid: dafe3ff78cecef3449c7897b8575e23e, type: 2}
       uvScale: 0.5
+      prefab: {fileID: 1836839211690404996, guid: 2aab28cd717fd237892fd5dc75cb8e54,
+        type: 3}
     - name: Window left
       side: 3
       dimension:
@@ -59,6 +61,7 @@ MonoBehaviour:
         height: 1
       material: {fileID: 2100000, guid: b5f8f5ba6ed9db243975d01a5d189308, type: 2}
       uvScale: 0.5
+      prefab: {fileID: 0}
     - name: Window right
       side: 2
       dimension:
@@ -69,6 +72,7 @@ MonoBehaviour:
         height: 1
       material: {fileID: 2100000, guid: b5f8f5ba6ed9db243975d01a5d189308, type: 2}
       uvScale: 0.5
+      prefab: {fileID: 0}
     - name: Window front
       side: 0
       dimension:
@@ -79,16 +83,19 @@ MonoBehaviour:
         height: 1
       material: {fileID: 2100000, guid: b5f8f5ba6ed9db243975d01a5d189308, type: 2}
       uvScale: 0.3
+      prefab: {fileID: 0}
     - name: Door back
       side: 1
       dimension:
         serializedVersion: 2
         x: 2
         y: 0.1
-        width: 1
-        height: 2.4
+        width: 1.2
+        height: 2.2
       material: {fileID: 2100000, guid: dafe3ff78cecef3449c7897b8575e23e, type: 2}
       uvScale: 0.5
+      prefab: {fileID: 1836839211690404996, guid: 2aab28cd717fd237892fd5dc75cb8e54,
+        type: 3}
     stairs:
     - side: 0
       inside: 0
@@ -102,8 +109,19 @@ MonoBehaviour:
       stepDepth: 0.4
       material: {fileID: 2100000, guid: c4cb26c1001fa28bd967dc39ef90d9b3, type: 2}
       uvScale: 0.5
+    - side: 1
+      inside: 0
+      offset: 2
+      baseWidth: 2
+      baseLength: 0.6
+      baseHeight: -0.1
+      descentAngle: 0
+      totalHeight: 2
+      stepHeight: 0.25
+      stepDepth: 0.4
+      material: {fileID: 2100000, guid: c4cb26c1001fa28bd967dc39ef90d9b3, type: 2}
+      uvScale: 0.5
   roofHeight: 1.8
-  gableWidth: 1
   materialRoof: {fileID: 2100000, guid: 853a2e619f9b220138240254c3fce870, type: 2}
   uvScaleRoof: 0.5
   materialGable: {fileID: 2100000, guid: 1cac97f7b3db6c0c483beda31a545460, type: 2}

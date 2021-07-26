@@ -84,7 +84,7 @@ namespace ProceduralStructures {
                         layer.MakeHole(origin, direction, Vector3.up, co.dimension.width, co.dimension.height);
                         if (co.prefab != null) {
                             GameObject objectInHole = GameObject.Instantiate(co.prefab);
-                            objectInHole.transform.parent = target.transform;
+                            objectInHole.transform.parent = AddedInterior(target).transform;
                             objectInHole.transform.localPosition = center + new Vector3(co.dimension.x, co.dimension.y, 0) + direction*length/2;
                             objectInHole.transform.localRotation = RotationFromSide(co.side);
                         }
@@ -329,6 +329,19 @@ namespace ProceduralStructures {
                 case HouseDefinition.Side.Left: return Quaternion.AngleAxis(90, Vector3.up);
             }
             return Quaternion.identity;
+        }
+
+        GameObject AddedInterior(GameObject target) {
+            GameObject added = Building.GetChildByName(target, Building.ADDED_INTERIOR);
+            if (added == null) {
+                added = new GameObject();
+                added.transform.parent = target.transform;
+                added.transform.localPosition = Vector3.zero;
+                added.transform.localRotation = Quaternion.identity;
+                added.transform.localScale = Vector3.zero;
+                added.name = Building.ADDED_INTERIOR;
+            }
+            return added;
         }
     }
 }

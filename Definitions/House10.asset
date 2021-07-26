@@ -49,8 +49,7 @@ MonoBehaviour:
         height: 2.2
       material: {fileID: 2100000, guid: dafe3ff78cecef3449c7897b8575e23e, type: 2}
       uvScale: 0.5
-      prefab: {fileID: 1836839211690404996, guid: 2aab28cd717fd237892fd5dc75cb8e54,
-        type: 3}
+      prefab: {fileID: 0}
     stairs:
     - side: 0
       inside: 0

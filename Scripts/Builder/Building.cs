@@ -6,6 +6,8 @@ namespace ProceduralStructures {
     {
         List<Face> faces = new List<Face>();
         Dictionary<Material, List<Face>> facesByMaterial = new Dictionary<Material, List<Face>>();
+        public static string ADDED_INTERIOR = "generatedInterior";
+        List<string> namesOfGeneratedObjects = new List<string> {"LOD0", "LOD1", "LOD2", ADDED_INTERIOR};
 
         public List<Face> GetFacesByMaterial(Material material) {
             if (material == null) {
@@ -85,10 +87,12 @@ namespace ProceduralStructures {
         public void ClearMeshes(GameObject target) {
             for (int i = target.transform.childCount-1; i>=0; i--) {
                 GameObject go = target.transform.GetChild(i).gameObject;
-                if (Application.isPlaying) {
-                    //Object.Destroy(go);
-                } else {
-                    Object.DestroyImmediate(go);
+                if (namesOfGeneratedObjects.Contains(go.name)) {
+                    if (Application.isPlaying) {
+                        Object.Destroy(go);
+                    } else {
+                        Object.DestroyImmediate(go);
+                    }
                 }
             }
         }
