@@ -113,22 +113,54 @@ namespace ProceduralStructures {
             return faces;
         }
 
-        public static List<Face> CloseEdgeLoops(List<Vector3> fromLoop, List<Vector3> toLoop, float uvScale=1f) {
+        public static List<Face> BridgeEdgeLoops(List<Vector3> fromVertices, List<Vector3> toVertices, float uvScale=1f) {
             List<Face> faces = new List<Face>();
-            Vector3 prev0 = Vector3.zero;
-            Vector3 prev1 = Vector3.zero;
-            bool firstVertex = true;
-            for (int i = 0; i < fromLoop.Count; i++) {
-                Vector3 v0 = fromLoop[i];
-                Vector3 v1 = toLoop[i];
-                if (!firstVertex) {
-                    Face face = new Face(prev0, v0, v1, prev1);
-                    face.SetUVFront(Vector3.Distance(prev0, prev1) * uvScale, Vector3.Distance(prev0, v0) * uvScale);
-                    faces.Add(face);
+            //TemporaryTesting();
+            int numberOfVertices = fromVertices.Count;
+            if (numberOfVertices < 3) {
+                Debug.LogWarning("There are not enough vertices to bridge: " + numberOfVertices);
+                return faces;
+            }
+            if (numberOfVertices != toVertices.Count) {
+                Debug.LogWarning("The vertices counts do not match: from=" + numberOfVertices + ", to=" + toVertices.Count);
+                return faces;
+            }
+            CircularReadonlyList<Vector3> fromRing = new CircularReadonlyList<Vector3>(fromVertices);
+            CircularReadonlyList<Vector3> toRing = new CircularReadonlyList<Vector3>(toVertices);
+            Vector3 fromNormal = Vector3.Cross(fromRing[1]-fromRing[0], fromRing[-1]-fromRing[0]).normalized;
+            Vector3 toNormal = Vector3.Cross(toRing[1]-toRing[0], toRing[-1]-toRing[0]).normalized;
+            // the normals should point to opposit directions
+            float dot = Vector3.Dot(fromNormal, toNormal);
+            if (dot > 0) {
+                toRing.Reverse();
+            }
+            toRing.Reverse();
+            // now check which vertices we should use for bridging
+            float minDeviation = float.MaxValue;
+            int bestPairing = 0;
+            for (int o = 0; o < fromRing.Count; o++) {
+                toRing.indexOffset = o;
+                List<Vector3> directions = new List<Vector3>();
+                for (int i = 0; i < fromRing.Count; i++) {
+                    directions.Add((toRing[i]-fromRing[i]).normalized);
                 }
-                prev0 = v0;
-                prev1 = v1;
-                firstVertex = false;
+                // sum the deviations from the expected value of one to each other
+                float sumDeviations = 0;
+                for (int i = 1; i < directions.Count; i++) {
+                    float dotDir = Vector3.Dot(directions[i-1], directions[i]);
+                    sumDeviations += 1f - dotDir;
+                }
+                if (sumDeviations < minDeviation) {
+                    minDeviation = sumDeviations;
+                    bestPairing = toRing.indexOffset;
+                }
+            }
+            toRing.indexOffset = bestPairing;
+
+            for (int i = 0; i < fromRing.Count; i++) {
+                Face face = new Face(fromRing[i], fromRing[i+1], toRing[i+1], toRing[i]);
+                face.SetUVForSize(uvScale);
+                faces.Add(face);
             }
             return faces;
         }

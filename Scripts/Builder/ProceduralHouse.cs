@@ -4,6 +4,33 @@ using UnityEngine;
 namespace ProceduralStructures {
     public class ProceduralHouse {
 
+        class QueuedMakeHole {
+            public QueuedMakeHole(Vector3 origin, Vector3 direction, Vector3 up, float width, float height, Material material, float maxDistance = 0) {
+                this.origin = origin;
+                this.direction = direction;
+                this.up = up;
+                this.width = width;
+                this.height = height;
+                this.material = material;
+                this.maxDistance = maxDistance;
+            }
+            Vector3 origin;
+            Vector3 direction;
+            Vector3 up;
+            float width;
+            float height;
+            Material material;
+            float maxDistance;
+
+            public void MakeHole(BuildingObject layer) {
+                layer.MakeHole(origin, direction, up, width, height, material, maxDistance);
+                Face hole = layer.FindFirstFaceByTag(Builder.CUTOUT);
+                if (hole != null) {
+                    layer.RemoveFace(hole);
+                }
+            }
+        }
+
         public void RebuildHouseWithInterior(HouseDefinition house, GameObject target) {
             RebuildHouseWithInterior(house, target, 0);
             RebuildHouseWithInterior(house, target, 1);
@@ -37,12 +64,16 @@ namespace ProceduralStructures {
             // this is used to close the top of the walls on the last layer when we build the roof
             float lastWallThickness = 0;
 
+            BuildingObject allLayers = new BuildingObject();
+            List<QueuedMakeHole> delayedBoring = new List<QueuedMakeHole>();
+
             // each layer describes a floor although multiple layers could be combined to a floor if you disable floor/ceiling creation
             foreach (HouseDefinition.BuildingStructure bs in house.layers) {
                 float height = bs.height;
                 float wallThickness = bs.wallThickness;
                 lastWallThickness = wallThickness;
                 BuildingObject layer = new BuildingObject();
+                layer.material = bs.material;
                 Vector3 a = center + new Vector3(-width/2, 0, -length/2);
                 Vector3 b = center + new Vector3(-width/2, 0, length/2);
                 Vector3 c = center + new Vector3(width/2, 0, length/2);
@@ -120,6 +151,15 @@ namespace ProceduralStructures {
                         }
                     }
                 }
+
+                // make a hole above stairs of previous layers
+                /*
+                foreach (QueuedMakeHole boringRequest in delayedBoring) {
+                    boringRequest.MakeHole(allLayers);
+                }
+                delayedBoring.Clear();
+                */
+
                 // add stairs
                 if (bs.stairs != null) {
                     foreach (HouseDefinition.Stairs stairs in bs.stairs) {
@@ -204,20 +244,23 @@ namespace ProceduralStructures {
                         if (stairs.inside) {
                             Bounds stairsBounds = stairsBlock.CalculateGlobalBounds();
                             Vector3 holePosition = stairsBounds.center;
-                            layer.MakeHole(holePosition, Vector3.up, Vector3.back, stairsBounds.extents.x*2, stairsBounds.extents.z*2);
-                            Face hole = layer.FindFirstFaceByTag(Builder.CUTOUT);
-                            if (hole != null) {
-                                layer.RemoveFace(hole);
-                            }
+                            float maxDistance = stairsBounds.extents.y + 1;
+                            delayedBoring.Add(new QueuedMakeHole(holePosition, Vector3.up, Vector3.back, stairsBounds.extents.x*2-0.1f, stairsBounds.extents.z*2-0.1f, bs.material, maxDistance));
                         }
-                        //Debug.Log("stairs position: " + stairsBlock.position);
                         building.AddObject(stairsBlock);
                     }
                 }
-                layer.material = bs.material;
-                building.AddObject(layer);
+                allLayers.AddObject(layer);
                 center.y += height;
             }
+
+            // make a hole above stairs of previous layers
+            foreach (QueuedMakeHole boringRequest in delayedBoring) {
+                boringRequest.MakeHole(allLayers);
+            }
+            delayedBoring.Clear();
+
+            building.AddObject(allLayers);
 
             if (house.roofHeight > 0) {
                 BuildingObject roofLayer = new BuildingObject();

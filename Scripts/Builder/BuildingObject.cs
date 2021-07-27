@@ -131,7 +131,7 @@ namespace ProceduralStructures {
             return this;
         }
 
-        public BuildingObject MakeHole(Vector3 origin, Vector3 direction, Vector3 up, float width, float height, float maxDistance = 0f) {
+        public BuildingObject MakeHole(Vector3 origin, Vector3 direction, Vector3 up, float width, float height, Material material = null, float maxDistance = 0f) {
             List<Face> result = new List<Face>();
             Vector3 intersection;
             bool fromBack;
@@ -228,10 +228,16 @@ namespace ProceduralStructures {
                             }
                             if (thisCutFace != null) {
                                 if (previousCutFace != null) {
-                                    unaffectedFaces.AddRange(Builder.CloseEdgeLoops(
-                                        new List<Vector3> { previousCutFace.a, previousCutFace.b, previousCutFace.c, previousCutFace.d, previousCutFace.a},
-                                        new List<Vector3> { thisCutFace.d, thisCutFace.c, thisCutFace.b, thisCutFace.a, thisCutFace.d},
-                                        1f));
+                                    List<Face> bridged = Builder.BridgeEdgeLoops(
+                                        new List<Vector3> { previousCutFace.a, previousCutFace.b, previousCutFace.c, previousCutFace.d},
+                                        new List<Vector3> { thisCutFace.a, thisCutFace.b, thisCutFace.c, thisCutFace.d},
+                                        1f);
+                                    if (material != null) {
+                                        foreach (Face b in bridged) {
+                                            b.material = material;
+                                        }
+                                    }
+                                    unaffectedFaces.AddRange(bridged);
                                     previousCutFace = null;
                                 } else {
                                     previousCutFace = thisCutFace;
