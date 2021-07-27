@@ -52,3 +52,11 @@ Even on a low-end coputer this step usually just takes seconds and your city wil
 Please note that if your camera is way up in a birds view the Unity editor may clip parts of the work because it's too far away. Just saying, I was
 shocked for a moment when I experienced that for the first time.
 
+# Tips and Tricks
+
+## Internal stairs
+Stairs can be set to internal, i.e. they will be placed in a hollow layer. To be able to climb such stairs the builder will
+cut through structures above and make head room. As stairs were meant as a help to get to a door step they always descend
+from the base height downwards (negative Y axis). For internal stairs you should set the base height to your floor height
+or a little lower. Best results can be achieved when you add a ceiling to the floor with the stairs and a floor plane to the
+layer above.
