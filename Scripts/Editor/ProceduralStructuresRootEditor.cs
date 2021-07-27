@@ -14,6 +14,7 @@ public class ProceduralStructuresRootEditor : Editor
                 Debug.Log("Found " + builder.Length + " house builders.");
                 ProceduralStructures.ProceduralHouse p = new ProceduralStructures.ProceduralHouse();
                 foreach (HouseBuilder h in builder) {
+                    Undo.RegisterFullObjectHierarchyUndo(h.gameObject, "Rebuild structures");
                     p.RebuildHouseWithInterior(h.houseDefinition, h.gameObject);
                 }
             } else {
@@ -27,6 +28,7 @@ public class ProceduralStructuresRootEditor : Editor
                 Debug.Log("Found " + builder.Length + " house builders.");
                 ProceduralStructures.Building building = new ProceduralStructures.Building();
                 foreach (HouseBuilder h in builder) {
+                    Undo.RegisterFullObjectHierarchyUndo(h.gameObject, "Remove structures");
                     building.ClearMeshes(h.gameObject);
                 }
             } else {

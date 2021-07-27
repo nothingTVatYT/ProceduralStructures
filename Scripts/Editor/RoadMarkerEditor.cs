@@ -8,6 +8,7 @@ public class RoadMarkerEditor : Editor
         DrawDefaultInspector();
         if (GUILayout.Button("Drop to terrain")) {
             RoadMarker marker = (RoadMarker)target;
+            Undo.RecordObject(marker.gameObject.transform, "Drop to terrain");
             Vector3 pos = marker.gameObject.transform.position;
             pos.y = Terrain.activeTerrain.SampleHeight(pos) + 1;
             marker.gameObject.transform.position = pos;

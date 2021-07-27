@@ -11,6 +11,7 @@ public class CityEditor : Editor
         CityMarker city = target as CityMarker;
         DrawDefaultInspector();
         if (GUILayout.Button("Transforms to points")) {
+            Undo.RecordObject(city, "Transforms to points");
             foreach (CityDefinition.Street street in city.cityDefinition.streets) {
                 street.points.Clear();
                 street.length = 0;
@@ -38,10 +39,16 @@ public class CityEditor : Editor
         }
         if (GUILayout.Button("Place buildings")) {
             CityBuilder cityBuilder = new CityBuilder();
+            if (city.cityDefinition.parent != null) {
+                Undo.RegisterFullObjectHierarchyUndo(city.cityDefinition.parent, "Place buildings");
+            }
             cityBuilder.PlaceHouses(city.cityDefinition);
         }
         if (GUILayout.Button("Remove buildings")) {
             CityBuilder cityBuilder = new CityBuilder();
+            if (city.cityDefinition.parent != null) {
+                Undo.RegisterFullObjectHierarchyUndo(city.cityDefinition.parent, "Remove buildings");
+            }
             cityBuilder.RemoveHouses(city.cityDefinition);
         }
     }
