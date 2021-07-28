@@ -13,8 +13,10 @@ public class ProceduralStructuresRootEditor : Editor
             if (builder != null && builder.Length > 0) {
                 Debug.Log("Found " + builder.Length + " house builders.");
                 ProceduralStructures.ProceduralHouse p = new ProceduralStructures.ProceduralHouse();
+                ProceduralStructures.Building building = new ProceduralStructures.Building();
                 foreach (HouseBuilder h in builder) {
                     Undo.RegisterFullObjectHierarchyUndo(h.gameObject, "Rebuild structures");
+                    building.ClearMeshes(h.gameObject);
                     p.RebuildHouseWithInterior(h.houseDefinition, h.gameObject);
                 }
             } else {
