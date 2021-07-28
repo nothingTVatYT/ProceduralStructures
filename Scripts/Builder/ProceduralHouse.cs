@@ -117,7 +117,8 @@ namespace ProceduralStructures {
                         layer.MakeHole(origin, direction, Vector3.up, co.dimension.width, co.dimension.height);
                         if (co.prefab != null) {
                             GameObject objectInHole = GameObject.Instantiate(co.prefab);
-                            objectInHole.transform.parent = AddedInterior(target).transform;
+                            GameObject interiorsObject = AddedInterior(target);
+                            objectInHole.transform.parent = interiorsObject.transform;
                             //objectInHole.transform.localPosition = center + new Vector3(co.dimension.x, co.dimension.y, 0) + direction*length/2;
                             float distance = length/2 + 0.1f;
                             if (co.side == HouseDefinition.Side.Left || co.side == HouseDefinition.Side.Right) {
@@ -125,6 +126,7 @@ namespace ProceduralStructures {
                             }
                             objectInHole.transform.localPosition = origin - new Vector3(0, co.dimension.height/2, 0) + direction*distance;
                             objectInHole.transform.localRotation = RotationFromSide(co.side);
+                            objectInHole.isStatic = interiorsObject.isStatic;
                         }
                     }
                 } else {
