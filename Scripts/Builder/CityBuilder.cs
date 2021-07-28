@@ -13,8 +13,10 @@ namespace ProceduralStructures {
             foreach (CityDefinition.Street street in city.streets) {
 
                 float streetLength = street.length;
+                int number = 1;
 
                 for (int side = -1; side <= 1; side+=2) {
+                    if (side > 0) number++;
                     float rightOffset = street.houseToHouse;
                     while (rightOffset < streetLength) {
                         GameObject prefab = RandomHouse(city);
@@ -37,6 +39,11 @@ namespace ProceduralStructures {
                         marker1.transform.position = pos;
                         marker1.transform.rotation = Quaternion.LookRotation(normal * side);
                         marker1.isStatic = true;
+                        HouseBuilder hb = 
+                        marker1.GetComponent<HouseBuilder>();
+                        hb.streetName = street.name;
+                        hb.number = number;
+                        number+=2;
                     }
                 }
             }
@@ -125,7 +132,7 @@ namespace ProceduralStructures {
             for (int i = city.parent.transform.childCount-1; i>=0; i--) {
                 GameObject go = city.parent.transform.GetChild(i).gameObject;
                 if (Application.isPlaying) {
-                    //Object.Destroy(go);
+                    Object.Destroy(go);
                 } else {
                     Object.DestroyImmediate(go);
                 }

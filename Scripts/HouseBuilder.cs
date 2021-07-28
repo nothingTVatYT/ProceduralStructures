@@ -4,6 +4,8 @@ using ProceduralStructures;
 public class HouseBuilder : MonoBehaviour
 {
     public HouseDefinition houseDefinition;
+    public string streetName;
+    public int number;
 
     public void OnDrawGizmosSelected() {
         DrawGizmo(true);
