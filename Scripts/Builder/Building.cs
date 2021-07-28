@@ -7,7 +7,7 @@ namespace ProceduralStructures {
         List<Face> faces = new List<Face>();
         Dictionary<Material, List<Face>> facesByMaterial = new Dictionary<Material, List<Face>>();
         public static string ADDED_INTERIOR = "generatedInterior";
-        List<string> namesOfGeneratedObjects = new List<string> {"LOD0", "LOD1", "LOD2", ADDED_INTERIOR};
+        public static List<string> namesOfGeneratedObjects = new List<string> {"LOD0", "LOD1", "LOD2", ADDED_INTERIOR};
 
         public List<Face> GetFacesByMaterial(Material material) {
             if (material == null) {
