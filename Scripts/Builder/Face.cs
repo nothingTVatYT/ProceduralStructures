@@ -1,3 +1,4 @@
+using System.Collections.Generic;
 using UnityEngine;
 
 namespace ProceduralStructures {
@@ -39,12 +40,16 @@ namespace ProceduralStructures {
         }
 
         public Vector3[] GetVertices() {
+            if (isTriangle)
+                return new Vector3[] { a, b, c };
             return new Vector3[] { a, b, c, d };
         }
-        public Vector3[] GetVerticesCCW() {
-            return new Vector3[] { a, d, c, b };
-        }
 
+        public List<Vector3> GetVerticesList() {
+            if (isTriangle) return new List<Vector3> { a, b, c };
+            return new List<Vector3> { a, b, c, d };
+        }
+        
         public Face DeepCopy() {
             Face n = new Face();
             n.a = a;
@@ -177,6 +182,15 @@ namespace ProceduralStructures {
                 uvC = new Vector2(width, height);
                 uvD = new Vector2(width, 0);
             }
+        }
+
+        public Face RotateUV() {
+            Quaternion rot = Quaternion.AngleAxis(90, Vector3.forward);
+            uvA = rot * uvA;
+            uvB = rot * uvB;
+            uvC = rot * uvC;
+            uvD = rot * uvD;
+            return this;
         }
     }
 }

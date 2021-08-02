@@ -94,6 +94,13 @@ namespace ProceduralStructures {
             return this;
         }
 
+        public BuildingObject RotateUVs() {
+            foreach (Face face in faces) {
+                face.RotateUV();
+            }
+            return this;
+        }
+
         public Bounds CalculateGlobalBounds() {
             Bounds bounds = new Bounds(rotation * (faces[0].a + position), Vector3.zero);
             foreach (Face face in faces) {
@@ -182,7 +189,7 @@ namespace ProceduralStructures {
                         float dB = Vector3.Dot(face.b-vCut, nCut);
                         float dC = Vector3.Dot(face.c-vCut, nCut);
                         float dD = Vector3.Dot(face.d-vCut, nCut);
-                        //Debug.LogFormat("da={0},db={1},dc={2},dd={3}", dA, dB, dC, dD);
+                        //Debug.LogFormat("cut{4}: da={0},db={1},dc={2},dd={3}", dA, dB, dC, dD, cut);
                         // if all determinants have the same sign there is no edge to split
                         if (Mathf.Sign(dA) != Mathf.Sign(dB) || Mathf.Sign(dB) != Mathf.Sign(dC) || Mathf.Sign(dC) != Mathf.Sign(dD)) {
                             // check which edges we have to split
@@ -190,7 +197,7 @@ namespace ProceduralStructures {
                             float rBC = (dB*dC)>=0 ? 0 : Mathf.Abs(dB/Mathf.Abs(dB-dC));
                             float rCD = (dC*dD)>=0 ? 0 : Mathf.Abs(dC/Mathf.Abs(dC-dD));
                             float rDA = (dD*dA)>=0 ? 0 : Mathf.Abs(dD/Mathf.Abs(dD-dA));
-                            //Debug.LogFormat("rAB={0},rBC={1},rCD={2},rDA={3}", rAB, rBC, rCD, rDA);
+                            //Debug.LogFormat("cut{4}: rAB={0},rBC={1},rCD={2},rDA={3}", rAB, rBC, rCD, rDA, cut);
                             if (rAB > 0) {
                                 if (rCD > 0) {
                                     // we cut through AB and CD
@@ -207,6 +214,8 @@ namespace ProceduralStructures {
                                         result.Add(f[0]);
                                         result.Add(f[1]);
                                     }
+                                } else {
+                                    result.Add(face);
                                 }
                             } else if (rBC > 0) {
                                 if (rDA > 0) {
@@ -224,7 +233,11 @@ namespace ProceduralStructures {
                                         result.Add(f[0]);
                                         result.Add(f[1]);
                                     }
+                                } else {
+                                    result.Add(face);
                                 }
+                            } else {
+                                result.Add(face);
                             }
                             if (thisCutFace != null) {
                                 if (previousCutFace != null) {

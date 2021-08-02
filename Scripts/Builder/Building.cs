@@ -38,6 +38,19 @@ namespace ProceduralStructures {
             faces.AddRange(child.faces);
         }
 
+        public void Build(GameObject target, int lod) {
+            GameObject lodTarget = GetChildByName(target, "LOD" + lod);
+            if (lodTarget == null) {
+                lodTarget = new GameObject("LOD" + lod);
+                lodTarget.transform.parent = target.transform;
+                lodTarget.transform.localPosition = Vector3.zero;
+                lodTarget.transform.localRotation = Quaternion.identity;
+                lodTarget.transform.localScale = Vector3.one;
+                lodTarget.isStatic = target.isStatic;
+            }
+            Build(lodTarget);
+        }
+        
         public void Build(GameObject target) {
             ClearMeshes(target);
             GroupFacesByMaterial();
