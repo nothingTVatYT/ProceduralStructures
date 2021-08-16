@@ -16,6 +16,6 @@ MonoBehaviour:
   stepHeight: 0.6
   stepThickness: 0.1
   poleThickness: 0.15
-  steps: 1
+  steps: 5
   ladderMaterial: {fileID: 2100000, guid: 5c2ec2c6c03ea951692f51b2f0cdb13c, type: 2}
   uvScale: 1

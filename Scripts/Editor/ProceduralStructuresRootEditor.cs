@@ -23,6 +23,7 @@ public class ProceduralStructuresRootEditor : Editor
                 Debug.Log("No builders were found.");
             }
         }
+
         if (GUILayout.Button("Remove generated objects in hierarchy starting here")) {
             HouseBuilder[] builder = root.gameObject.GetComponentsInChildren<HouseBuilder>();
 
@@ -36,7 +37,17 @@ public class ProceduralStructuresRootEditor : Editor
             } else {
                 Debug.Log("No builders were found.");
             }
+        }
 
+        if (GUILayout.Button("Suggest street names on signs")) {
+            AddressLabel[] labels = root.gameObject.GetComponentsInChildren<AddressLabel>();
+            if (labels != null && labels.Length > 0) {
+                Debug.Log("Found " + labels.Length + " street signs.");
+                foreach (AddressLabel label in labels) {
+                    Undo.RegisterCompleteObjectUndo(label, "Suggest name");
+                    label.SuggestStreetName();
+                }
+            }
         }
     }
 }
