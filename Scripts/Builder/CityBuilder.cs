@@ -13,9 +13,9 @@ namespace ProceduralStructures {
             foreach (CityDefinition.Street street in city.streets) {
 
                 float streetLength = street.length;
-                int number = 1;
 
                 for (int side = -1; side <= 1; side+=2) {
+                    int number = 1;
                     if (side > 0) number++;
                     float rightOffset = street.houseToHouse;
                     while (rightOffset < streetLength) {
@@ -32,15 +32,14 @@ namespace ProceduralStructures {
                             break;
                         }
                         Vector3 frontCenter = pos - normal * houseDefinition.length/2 * side;
-                        pos.y = Terrain.activeTerrain.SampleHeight(frontCenter);
+                        pos.y = Terrain.activeTerrain.SampleHeight(frontCenter) + city.yOffset;
                         GameObject marker1 = GameObject.Instantiate(prefab);
                         generated.Add(marker1);
                         marker1.transform.parent = city.parent.transform;
                         marker1.transform.position = pos;
                         marker1.transform.rotation = Quaternion.LookRotation(normal * side);
                         marker1.isStatic = true;
-                        HouseBuilder hb = 
-                        marker1.GetComponent<HouseBuilder>();
+                        HouseBuilder hb = marker1.GetComponent<HouseBuilder>();
                         hb.streetName = street.name;
                         hb.number = number;
                         number+=2;
@@ -56,7 +55,9 @@ namespace ProceduralStructures {
                 Vector3 boundingBoxSize = hb.calculateSize();
                 float maxRadius = boundingBoxSize.magnitude/2;
                 Bounds bounds = new Bounds(boundingCenter, boundingBoxSize);
-                for (int j = 0; j < i; j++) {
+                bool removeIt = BoundsIntersectsStreets(go.transform, bounds, city.streets);
+                
+                if (!removeIt) { for (int j = 0; j < i; j++) {
                     HouseBuilder hb2 = generated[j].GetComponent<HouseBuilder>();
                     Vector3 boundingCenter2 = hb2.calculateCenter();
                     Vector3 boundingCenter2W = generated[j].transform.TransformPoint(boundingCenter2);
@@ -65,7 +66,6 @@ namespace ProceduralStructures {
                     if ((boundingCenterW-boundingCenter2W).magnitude >= (maxRadius+maxRadius2)) {
                         continue;
                     }
-                    bool removeIt = false;
                     // test current building to previous
                     foreach (Vector3 testVector in new Vector3[] {
                         boundingCenter2,
@@ -96,8 +96,12 @@ namespace ProceduralStructures {
                         }
                     }
                     if (removeIt) {
-                        go.SetActive(false);
+                        break;
                     }
+                }
+                }
+                if (removeIt) {
+                    go.SetActive(false);
                 }
             }
         }
@@ -126,6 +130,34 @@ namespace ProceduralStructures {
             Vector3 a = segment[0];
             Vector3 b = segment[1];
             return Vector3.Cross(a-b, Vector3.up).normalized;
+        }
+
+        bool BoundsIntersectsStreets(Transform transform, Bounds bounds, List<CityDefinition.Street> streets) {
+            bool result = false;
+            foreach (CityDefinition.Street street in streets) {
+                result = BoundsIntersectsStreet(transform, bounds, street);
+                if (result) break;
+            }
+            return result;
+        }
+
+        bool BoundsIntersectsStreet(Transform transform, Bounds bounds, CityDefinition.Street street) {
+            bool result = false;
+            float hitDistance;
+            Ray segmentRay = new Ray();
+            for (int i = 0; i < street.points.Count - 1; i++) {
+                Vector3 l = street.points[i+1] - street.points[i];
+                float segmentLength = l.magnitude;
+                segmentRay.origin = transform.InverseTransformPoint(street.points[i]);
+                segmentRay.direction = transform.InverseTransformDirection(l.normalized);
+                if (bounds.IntersectRay(segmentRay, out hitDistance)) {
+                    if (hitDistance < segmentLength) {
+                        result = true;
+                        break;
+                    }
+                }
+            }
+            return result;
         }
 
         public void RemoveHouses(CityDefinition city) {

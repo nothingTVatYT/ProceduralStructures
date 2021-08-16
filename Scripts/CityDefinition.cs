@@ -10,6 +10,7 @@ public class CityDefinition {
     public List<GameObject> houses;
     public List<Street> streets;
     public int seed;
+    public float yOffset = 0;
 
     [Serializable]
     public class Street {
