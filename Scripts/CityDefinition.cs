@@ -11,6 +11,7 @@ public class CityDefinition {
     public List<Street> streets;
     public int seed;
     public float yOffset = 0;
+    public RoadPainting roadPainting;
 
     [Serializable]
     public class Street {
@@ -20,5 +21,13 @@ public class CityDefinition {
         public float houseToHouse = 0.8f;
         public List<Vector3> points;
         public List<Transform> transforms;
+    }
+    [Serializable]
+    public class RoadPainting {
+        public Terrain terrain;
+        public int layerIndex;
+        [Range(0,1)]
+        public float maxAlpha = 1f;
+        public int paintRadius = 2;
     }
 }

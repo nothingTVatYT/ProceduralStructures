@@ -51,5 +51,13 @@ public class CityEditor : Editor
             }
             cityBuilder.RemoveHouses(city.cityDefinition);
         }
+        if (GUILayout.Button("Paint road layer")) {
+            CityBuilder cityBuilder = new CityBuilder();
+            cityBuilder.PaintTerrain(city.cityDefinition);
+        }
+        if (GUILayout.Button("Repair alpha layers")) {
+            CityBuilder cityBuilder = new CityBuilder();
+            cityBuilder.RepairTerrainAlphamap(city.cityDefinition);
+        }
     }
 }

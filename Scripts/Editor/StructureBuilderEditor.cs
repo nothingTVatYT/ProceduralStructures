@@ -3,6 +3,7 @@ using UnityEditor;
 using ProceduralStructures;
 
 [CustomEditor(typeof(StructureBuilder))]
+[CanEditMultipleObjects]
 public class StructureBuilderEditor : Editor {
 
     private StructureBuilder structureBuilder;

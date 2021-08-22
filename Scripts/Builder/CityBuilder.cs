@@ -126,6 +126,12 @@ namespace ProceduralStructures {
             return new Vector3[] { a, b };
         }
 
+        IEnumerable<Vector3[]> StreetSegments(CityDefinition.Street street) {
+            for (int index = 0; index < street.points.Count -1; index++) {
+                yield return new Vector3[] { street.points[index], street.points[index+1] };
+            }
+        }
+
         Vector3 GetStreetNormalAt(Vector3[] segment) {
             Vector3 a = segment[0];
             Vector3 b = segment[1];
@@ -170,6 +176,110 @@ namespace ProceduralStructures {
                 }
             }
 
+        }
+
+        public void RepairTerrainAlphamap(CityDefinition city) {
+            int mx = city.roadPainting.terrain.terrainData.alphamapWidth;
+            int my = city.roadPainting.terrain.terrainData.alphamapHeight;
+            float[,,] alphaMap = city.roadPainting.terrain.terrainData.GetAlphamaps(0, 0, mx, my);
+            int errors = 0;
+            int corrected = 0;
+            for (int y = 0; y < my; y++) {
+                for (int x = 0; x < mx; x++) {
+                    float sumAlpha = 0;
+                    for (int i = 0; i < city.roadPainting.terrain.terrainData.alphamapLayers; i++) {
+                        sumAlpha += alphaMap[x, y, i];
+                    }
+                    if (Mathf.Abs(1f - sumAlpha) > 1e-2f) {
+                        errors++;
+                        if (sumAlpha > 0) {
+                            for (int i = 0; i < city.roadPainting.terrain.terrainData.alphamapLayers; i++) {
+                                alphaMap[x, y, i] /= sumAlpha;
+                            }
+                            corrected++;
+                        }
+                    }
+                }
+            }
+            if (errors > 0) {
+                city.roadPainting.terrain.terrainData.SetAlphamaps(0, 0, alphaMap);
+                Debug.Log("alpha mismatch on " + errors + " pixels of " + (mx * my) + ", corrected: " + corrected);
+            } else {
+                Debug.Log("Alpha map is OK.");
+            }
+        }
+
+        public void PaintTerrain(CityDefinition city) {
+            CityDefinition.RoadPainting painting = city.roadPainting;
+            Terrain terrain = painting.terrain;
+            if (terrain == null) terrain = Terrain.activeTerrain;
+            int nLayers = terrain.terrainData.alphamapLayers;
+            float roadAlpha = painting.maxAlpha;
+            float stepSize = 1;
+            int splatSize = painting.paintRadius * 2 - 1;
+            int lIdx = painting.layerIndex;
+
+            foreach (Vector3 sample in LocationOnStreets(city, stepSize)) {
+                Vector2 terrainUV = WorldToTextureCoordinate(sample, terrain);
+                int posX = Mathf.RoundToInt(terrainUV.x) - splatSize/2;
+                int posZ = Mathf.RoundToInt(terrainUV.y) - splatSize/2;
+                float[,,] alphaMap = terrain.terrainData.GetAlphamaps(posX, posZ, splatSize, splatSize);
+                for (int y = 0; y < splatSize; y++) {
+                    float dy = Mathf.Abs(splatSize/2 - y);
+                    for (int x = 0; x < splatSize; x++) {
+                        float dx = Mathf.Abs(splatSize/2 - x);
+                        float splatAlpha = Mathf.Clamp01(roadAlpha - Mathf.Clamp01((dx*dx + dy*dy)/splatSize));
+                        float otherAlpha = 0;
+                        for (int i = 0; i < nLayers; i++) {
+                            if (i != lIdx) {
+                                otherAlpha += alphaMap[x,y,i];
+                            }
+                        }
+                        float deltaAlpha = -alphaMap[x, y, lIdx];
+                        alphaMap[x, y, lIdx] = Mathf.Max(splatAlpha, alphaMap[x, y, lIdx]);
+                        deltaAlpha += alphaMap[x, y, lIdx];
+                        if (otherAlpha > 0) {
+                            for (int i = 0; i < nLayers; i++) {
+                                if (i != lIdx) {
+                                    alphaMap[x,y,i] *= 1f - deltaAlpha/otherAlpha;
+                                }
+                            }
+                        }
+                    }
+                }
+                terrain.terrainData.SetAlphamaps(posX, posZ, alphaMap);
+            }
+        }
+
+        IEnumerable<Vector3> LocationOnStreet(CityDefinition.Street street, float stepSize) {
+            float currentMark = 0;
+            float streetLength = street.length;
+            float pastSegmentsLength = 0;
+            foreach (Vector3[] segment in StreetSegments(street)) {
+                float segmentMark = currentMark - pastSegmentsLength;
+                float segmentLength = (segment[1]-segment[0]).magnitude;
+                while (segmentMark <= segmentLength) {
+                    Vector3 pos = segment[0] + (segment[1]-segment[0]).normalized * segmentMark;
+                    currentMark += stepSize;
+                    segmentMark += stepSize;
+                    yield return pos;
+                }
+                pastSegmentsLength += segmentLength;
+            }
+        }
+
+        IEnumerable<Vector3> LocationOnStreets(CityDefinition city, float stepSize = 1) {
+            foreach (CityDefinition.Street street in city.streets) {
+                foreach (Vector3 v in LocationOnStreet(street, stepSize)) {
+                    yield return v;
+                }
+            }
+        }
+        Vector2 WorldToTextureCoordinate(Vector3 position, Terrain terrain) {
+            Vector3 localPosition = position - terrain.transform.position;
+            float relativeX = localPosition.x / terrain.terrainData.size.x;
+            float relativeZ = localPosition.z / terrain.terrainData.size.z;
+            return new Vector2(relativeX * terrain.terrainData.alphamapWidth, relativeZ * terrain.terrainData.alphamapHeight);
         }
     }
 }
