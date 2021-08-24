@@ -126,7 +126,6 @@ namespace ProceduralStructures {
                 outerEdges.Add(new Edge(face.b, face.c));
             }
             List<Face> top = Builder.BridgeEdges(innerEdges, outerEdges, true, wall.uvScale);
-            //top.ForEach(f => f.SetUVProjectedLocal(wall.uvScale));
             wallObject.AddFaces(top);
 
             if (!wall.closeLoop) {
@@ -139,46 +138,15 @@ namespace ProceduralStructures {
                 wallObject.AddFace(end);
             }
 
-            /*
-            Vector3 prevSegmentDirection = (points[1] - points[0]).normalized;
-            Vector3 prev = (wall.closeLoop) ? (points[points.Count-1] - points[0]).normalized : prevSegmentDirection;
-            Vector3 cutDirection = Vector3.Cross((prev + prevSegmentDirection)/2, Vector3.up);
-            Vector3 a = points[0] + cutDirection * wall.wallThickness/2;
-            Vector3 b = a + wallHeight;
-            Vector3 c = b - cutDirection * wall.wallThickness;
-            Vector3 d = c - wallHeight;
-            if (!wall.closeLoop) {
-                Face end = new Face(a, b, c, d);
-                end.SetUVForSize(wall.uvScale);
-                wallObject.AddFace(end);
-            }
-            for (int i = 1; i < points.Count; i++) {
-                Vector3 nextSegmentDirection = (i < points.Count-1) ? (points[i+1] - points[i]).normalized : prevSegmentDirection;
-                Vector3 cutDirection1 = Vector3.Cross((prevSegmentDirection + nextSegmentDirection)/2, Vector3.up);
-                Vector3 a1 = points[i] + cutDirection1 * wall.wallThickness/2;
-                Vector3 b1 = a1 + wallHeight;
-                Vector3 c1 = b1 - cutDirection1 * wall.wallThickness;
-                Vector3 d1 = c1 - wallHeight;
-                
-                wallObject.AddFaces(Builder.BridgeEdgeLoops(new List<Vector3> {a, d, c, b}, new List<Vector3> {a1, d1, c1, b1}, wall.uvScale));
-
-                if (wall.generateCornerPieces) {
-                    wallObject.AddObject(GenerateCornerPiece(a1 + cutDirection * wall.wallThickness/2, wallHeight.y+1, wall.wallThickness*2, cutDirection, wall.uvScale));
+            if (wall.generateCornerPieces) {
+                for (int i = 0; i < originalPoints.Count; i++) {
+                    Vector3 corner = originalPoints[i];
+                    int j = i % outerWall.Count;
+                    Vector3 direction = (innerWall[j].a - outerWall[j].a).normalized;
+                    wallObject.AddObject(GenerateCornerPiece(corner + heightOffset, wallHeight.y+1, wall.wallThickness*2, direction, wall.uvScale));
                 }
-
-                if (!wall.closeLoop && i == points.Count-1) {
-                    Face faceEnd = new Face(d1, c1, b1, a1);
-                    faceEnd.SetUVForSize(wall.uvScale);
-                    wallObject.AddFace(faceEnd);
-                }
-                a = a1;
-                b = b1;
-                c = c1;
-                d = d1;
-                prevSegmentDirection = nextSegmentDirection;
             }
-            */
-            //wallObject.SetUVBoxProjection(wall.uvScale);
+
             building.AddObject(wallObject);
             building.Build(target, 0);
             GameObject go = Building.GetChildByName(target, "LOD0");
