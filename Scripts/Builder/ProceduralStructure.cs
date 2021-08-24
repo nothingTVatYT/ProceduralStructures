@@ -57,6 +57,7 @@ namespace ProceduralStructures {
                 return;
             }
             List<Vector3> points = new List<Vector3>(wall.points.Count);
+            List<Vector3> originalPoints = new List<Vector3>(wall.points.Count);
             float maxY = float.MinValue;
             foreach (Transform t in wall.points) {
                 Vector3 p = t.position;
@@ -64,6 +65,7 @@ namespace ProceduralStructures {
             }
             foreach (Transform t in wall.points) {
                 Vector3 p = t.position;
+                originalPoints.Add(t.position);
                 p.y = maxY;
                 points.Add(p);
             }
@@ -75,14 +77,17 @@ namespace ProceduralStructures {
                     return angleA < angleB ? 1 : angleA > angleB ? -1 : 0;
                 });
                 points.Clear();
+                originalPoints.Clear();
                 foreach (Transform t in wall.points) {
                     Vector3 p = t.position;
+                    originalPoints.Add(t.position);
                     p.y = maxY;
                     points.Add(p);
                 }
             }
             for (int i = 0; i < points.Count; i++) {
                 points[i] = points[i] - centroid;
+                originalPoints[i] = originalPoints[i] - centroid;
             }
             Building building = new Building();
             BuildingObject wallObject = new BuildingObject();
@@ -96,6 +101,19 @@ namespace ProceduralStructures {
             }
             List<Face> outerWall = Builder.ExtrudeEdges(points, wallHeight, wall.uvScale);
             List<Face> innerWall = Builder.CloneAndMoveFacesOnNormal(outerWall, wall.wallThickness, wall.uvScale);
+            // project it back on the ground, this should be done by above function
+            for (int i = 0; i < points.Count; i++) {
+                Builder.MoveVertices(outerWall, points[i], Builder.MatchingVertex.XZ, originalPoints[i]);
+            }
+            for (int i = 0; i < outerWall.Count; i++) {
+                Face outer = outerWall[i];
+                Face inner = innerWall[i];
+                // copy y values
+                inner.d.y = outer.a.y;
+                inner.a.y = outer.d.y;
+                inner.b.y = outer.c.y;
+                inner.c.y = outer.b.y;
+            }
             wallObject.AddFaces(outerWall);
             wallObject.AddFaces(innerWall);
             // now close the top by extracting all BC edges and create faces
@@ -120,6 +138,7 @@ namespace ProceduralStructures {
                 end.SetUVForSize(wall.uvScale);
                 wallObject.AddFace(end);
             }
+
             /*
             Vector3 prevSegmentDirection = (points[1] - points[0]).normalized;
             Vector3 prev = (wall.closeLoop) ? (points[points.Count-1] - points[0]).normalized : prevSegmentDirection;

@@ -5,6 +5,7 @@ using UnityEngine;
 namespace ProceduralStructures {
     public static class Builder {
         public static int CUTOUT = 1;
+        public enum MatchingVertex { XY, XZ, YZ }
         public static List<Face> IndentFace(Face face, Vector3 direction, float uvScale=1f) {
             List<Face> faces = new List<Face>();
             Vector3 prev = Vector3.zero;
@@ -216,6 +217,40 @@ namespace ProceduralStructures {
                 previousface = face;
             }
             //result.AddRange(faces);
+            return result;
+        }
+
+        public static void MoveVertices(List<Face> faces, Vector3 from, MatchingVertex matching, Vector3 to) {
+            Vector3 delta = to - from;
+            foreach (Face face in faces) {
+                if (Matches(face.a, from, matching)) {
+                    face.a += delta;
+                }
+                if (Matches(face.b, from, matching)) {
+                    face.b += delta;
+                }
+                if (Matches(face.c, from, matching)) {
+                    face.c += delta;
+                }
+                if (!face.isTriangle && Matches(face.d, from, matching)) {
+                    face.d += delta;
+                }
+            }
+        }
+
+        public static bool Matches(Vector3 v, Vector3 pattern, MatchingVertex matching) {
+            bool result = false;
+            switch (matching) {
+                case MatchingVertex.XZ:
+                    result = Mathf.Approximately(v.x, pattern.x) && Mathf.Approximately(v.z, pattern.z);
+                    break;
+                case MatchingVertex.XY:
+                    result = Mathf.Approximately(v.x, pattern.x) && Mathf.Approximately(v.y, pattern.y);
+                    break;
+                case MatchingVertex.YZ:
+                    result = Mathf.Approximately(v.y, pattern.y) && Mathf.Approximately(v.z, pattern.z);
+                    break;
+            }
             return result;
         }
 

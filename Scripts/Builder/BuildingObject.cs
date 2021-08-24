@@ -138,6 +138,11 @@ namespace ProceduralStructures {
             return this;
         }
 
+        public BuildingObject MoveVertices(Vector3 from, Builder.MatchingVertex matching, Vector3 to) {
+            Builder.MoveVertices(faces, from, matching, to);
+            return this;
+        }
+
         public BuildingObject MakeHole(Vector3 origin, Vector3 direction, Vector3 up, float width, float height, Material material = null, float maxDistance = 0f) {
             List<Face> result = new List<Face>();
             Vector3 intersection;
