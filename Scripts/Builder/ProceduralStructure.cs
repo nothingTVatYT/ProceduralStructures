@@ -49,5 +49,144 @@ namespace ProceduralStructures {
 
             building.Build(target, 0);
         }
+
+        public void RebuildWall(WallDefinition wall, GameObject target) {
+            int minNumberMarkers = wall.closeLoop ? 3 : 2;
+            if (wall.points.Count < minNumberMarkers) {
+                Debug.LogWarning("cannot build a wall with " + wall.points.Count + " corner(s).");
+                return;
+            }
+            List<Vector3> points = new List<Vector3>(wall.points.Count);
+            float maxY = float.MinValue;
+            foreach (Transform t in wall.points) {
+                Vector3 p = t.position;
+                maxY = Mathf.Max(maxY, p.y);
+            }
+            foreach (Transform t in wall.points) {
+                Vector3 p = t.position;
+                p.y = maxY;
+                points.Add(p);
+            }
+            Vector3 centroid = Builder.FindCentroid(points);
+            if (wall.sortMarkers) {
+                wall.points.Sort(delegate(Transform a, Transform b) {
+                    float angleA = Mathf.Atan2(a.position.z - centroid.z, a.position.x - centroid.x);
+                    float angleB = Mathf.Atan2(b.position.z - centroid.z, b.position.x - centroid.x);
+                    return angleA < angleB ? 1 : angleA > angleB ? -1 : 0;
+                });
+                points.Clear();
+                foreach (Transform t in wall.points) {
+                    Vector3 p = t.position;
+                    p.y = maxY;
+                    points.Add(p);
+                }
+            }
+            for (int i = 0; i < points.Count; i++) {
+                points[i] = points[i] - centroid;
+            }
+            Building building = new Building();
+            BuildingObject wallObject = new BuildingObject();
+            wallObject.material = wall.material;
+
+            Vector3 wallHeight = new Vector3(0, wall.wallHeight, 0);
+            Vector3 heightOffset = new Vector3(0, wall.heightOffset, 0);
+
+            if (wall.closeLoop) {
+                points.Add(points[0]);
+            }
+            List<Face> outerWall = Builder.ExtrudeEdges(points, wallHeight, wall.uvScale);
+            List<Face> innerWall = Builder.CloneAndMoveFacesOnNormal(outerWall, wall.wallThickness, wall.uvScale);
+            wallObject.AddFaces(outerWall);
+            wallObject.AddFaces(innerWall);
+            // now close the top by extracting all BC edges and create faces
+            List<Edge> innerEdges = new List<Edge>();
+            List<Edge> outerEdges = new List<Edge>();
+            foreach (Face face in innerWall) {
+                innerEdges.Add(new Edge(face.b, face.c));
+            }
+            foreach (Face face in outerWall) {
+                outerEdges.Add(new Edge(face.b, face.c));
+            }
+            List<Face> top = Builder.BridgeEdges(innerEdges, outerEdges, true, wall.uvScale);
+            //top.ForEach(f => f.SetUVProjectedLocal(wall.uvScale));
+            wallObject.AddFaces(top);
+
+            if (!wall.closeLoop) {
+                Face start = new Face(new Edge(innerWall[0].d, innerWall[0].c), new Edge(outerWall[0].b, outerWall[0].a));
+                start.SetUVForSize(wall.uvScale);
+                wallObject.AddFace(start);
+                int i = outerWall.Count-1;
+                Face end = new Face(new Edge(outerWall[i].d, outerWall[i].c), new Edge(innerWall[i].b, innerWall[i].a));
+                end.SetUVForSize(wall.uvScale);
+                wallObject.AddFace(end);
+            }
+            /*
+            Vector3 prevSegmentDirection = (points[1] - points[0]).normalized;
+            Vector3 prev = (wall.closeLoop) ? (points[points.Count-1] - points[0]).normalized : prevSegmentDirection;
+            Vector3 cutDirection = Vector3.Cross((prev + prevSegmentDirection)/2, Vector3.up);
+            Vector3 a = points[0] + cutDirection * wall.wallThickness/2;
+            Vector3 b = a + wallHeight;
+            Vector3 c = b - cutDirection * wall.wallThickness;
+            Vector3 d = c - wallHeight;
+            if (!wall.closeLoop) {
+                Face end = new Face(a, b, c, d);
+                end.SetUVForSize(wall.uvScale);
+                wallObject.AddFace(end);
+            }
+            for (int i = 1; i < points.Count; i++) {
+                Vector3 nextSegmentDirection = (i < points.Count-1) ? (points[i+1] - points[i]).normalized : prevSegmentDirection;
+                Vector3 cutDirection1 = Vector3.Cross((prevSegmentDirection + nextSegmentDirection)/2, Vector3.up);
+                Vector3 a1 = points[i] + cutDirection1 * wall.wallThickness/2;
+                Vector3 b1 = a1 + wallHeight;
+                Vector3 c1 = b1 - cutDirection1 * wall.wallThickness;
+                Vector3 d1 = c1 - wallHeight;
+                
+                wallObject.AddFaces(Builder.BridgeEdgeLoops(new List<Vector3> {a, d, c, b}, new List<Vector3> {a1, d1, c1, b1}, wall.uvScale));
+
+                if (wall.generateCornerPieces) {
+                    wallObject.AddObject(GenerateCornerPiece(a1 + cutDirection * wall.wallThickness/2, wallHeight.y+1, wall.wallThickness*2, cutDirection, wall.uvScale));
+                }
+
+                if (!wall.closeLoop && i == points.Count-1) {
+                    Face faceEnd = new Face(d1, c1, b1, a1);
+                    faceEnd.SetUVForSize(wall.uvScale);
+                    wallObject.AddFace(faceEnd);
+                }
+                a = a1;
+                b = b1;
+                c = c1;
+                d = d1;
+                prevSegmentDirection = nextSegmentDirection;
+            }
+            */
+            //wallObject.SetUVBoxProjection(wall.uvScale);
+            building.AddObject(wallObject);
+            building.Build(target, 0);
+            GameObject go = Building.GetChildByName(target, "LOD0");
+            if (go != null) {
+                go.transform.position = centroid;
+            }
+
+            if (wall.cornerPiece != null) {
+                
+                foreach (Transform t in wall.points) {
+                    GameObject corner = GameObject.Instantiate(wall.cornerPiece);
+                    corner.transform.parent = go.transform;
+                    corner.transform.position = t.position + (centroid-t.position).normalized * wall.wallThickness/2;
+                    corner.transform.LookAt(new Vector3(centroid.x, corner.transform.position.y, centroid.z));
+                }
+            }
+        }
+
+        private BuildingObject GenerateCornerPiece(Vector3 center, float height, float width,
+                Vector3 inwards, float uvScale) {
+            BuildingObject result = new BuildingObject();                    
+            Face top = Face.CreateXZPlane(width, width);
+            top.MoveFaceBy(Vector3.up * height).Rotate(Quaternion.LookRotation(inwards, Vector3.up));
+            result.AddFaces(Builder.ExtrudeEdges(top, Vector3.down * height, uvScale));
+            result.AddFace(top);
+            result.position = center;
+            return result;
+        }
     }
 }

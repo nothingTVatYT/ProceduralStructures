@@ -4,22 +4,11 @@ using UnityEngine;
 
 public class WallBuilder : MonoBehaviour
 {
-    public bool useChildren = true;
-    public List<Transform> points;
-    public float wallHeight = 2f;
-    public float heightOffset = 0;
-    public float wallThickness = 1f;
-    public bool sortMarkers = true;
-    public bool closeLoop = true;
-    public Material material;
-    public float tilingX = 1;
-    public float tilingY = 1;
-    public bool generateCornerPieces = true;
-    public GameObject cornerPiece;
+    public WallDefinition wall;
 
-    // Start is called before the first frame update
     void Start()
     {
+        UpdatePoints();
         HideMarkers();
     }
 
@@ -29,15 +18,39 @@ public class WallBuilder : MonoBehaviour
         
     }
 
+    public void OnDrawGizmos() {
+        if (wall.points.Count > 1) {
+            Vector3 a = wall.points[0].position;
+            for (int i = 1; i < wall.points.Count; i++) {
+                Vector3 b = wall.points[i].position;
+                Gizmos.DrawLine(a, b);
+                a = b;
+            }
+            if (wall.closeLoop) {
+                Gizmos.DrawLine(a, wall.points[0].position);
+            }
+        }
+    }
+
+    public void UpdatePoints() {
+        if (wall.useChildren) {
+            wall.points.Clear();
+            foreach (Transform t in gameObject.transform) {
+                if (!t.gameObject.name.StartsWith("LOD"))
+                    wall.points.Add(t);
+            }
+        }
+    }
+
     private void HideMarkers() {
         List<Transform> children;
-        if (useChildren) {
+        if (wall.useChildren) {
             children = new List<Transform>();
             foreach (Transform t in gameObject.transform) {
                 children.Add(t);
             }
         } else {
-            children = points;
+            children = wall.points;
         }
         foreach (Transform t in children) {
             t.gameObject.SetActive(false);

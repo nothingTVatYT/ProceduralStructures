@@ -154,14 +154,6 @@ namespace ProceduralStructures {
                     }
                 }
 
-                // make a hole above stairs of previous layers
-                /*
-                foreach (QueuedMakeHole boringRequest in delayedBoring) {
-                    boringRequest.MakeHole(allLayers);
-                }
-                delayedBoring.Clear();
-                */
-
                 // add stairs
                 if (bs.stairs != null) {
                     foreach (HouseDefinition.Stairs stairs in bs.stairs) {

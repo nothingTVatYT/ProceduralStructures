@@ -1,5 +1,6 @@
 using System.Collections.Generic;
 using UnityEngine;
+using ExtensionMethods;
 
 namespace ProceduralStructures {
     public class Face
@@ -28,6 +29,19 @@ namespace ProceduralStructures {
             this.c = c;
             isTriangle = true;
             // initialize UV
+            SetUVFront(1, 1);
+        }
+
+        public Face(Edge edge1, Edge edge2) {
+            this.a = edge1.a;
+            this.b = edge1.b;
+            if (edge1.OppositeDirection(edge2)) {
+                this.c = edge2.a;
+                this.d = edge2.b;
+            } else {
+                this.c = edge2.b;
+                this.d = edge2.a;
+            }
             SetUVFront(1, 1);
         }
 
@@ -83,11 +97,44 @@ namespace ProceduralStructures {
                 a = c;
                 c = t;
             } else {
-                Vector3 t = b;
-                b = d;
+                Vector3 t = a;
+                a = d;
                 d = t;
+                t = b;
+                b = c;
+                c = t;
             }
             return this;
+        }
+
+        public bool IsPlanar() {
+            if (isTriangle) return true;
+            Vector3 n1 = Vector3.Cross(b-a, d-a).normalized;
+            Vector3 n2 = Vector3.Cross(b-c, d-c).normalized;
+            return Mathf.Abs(Vector3.Dot(n1, n2) - 1f) < 1e-3;
+        }
+
+        public List<Edge> GetEdges() {
+            List<Edge> result = new List<Edge>();
+            result.Add(new Edge(a, b));
+            result.Add(new Edge(b, c));
+            if (isTriangle) {
+                result.Add(new Edge(c, a));
+            } else {
+                result.Add(new Edge(c, d));
+                result.Add(new Edge(d, a));
+            }
+            return result;
+        }
+
+        public bool SharesEdgeWith(Face other) {
+            List<Edge> otherEdges = other.GetEdges();
+            foreach (Edge edge in GetEdges()) {
+                if (otherEdges.Contains(edge.Flipped())) {
+                    return true;
+                }
+            }
+            return false;
         }
 
         public static bool RayHitTriangle(Vector3 origin, Vector3 direction, Vector3 v0, Vector3 v1, Vector3 v2, out Vector3 intersection) {
@@ -166,13 +213,43 @@ namespace ProceduralStructures {
             return this;
         }
 
-        public void SetUVForSize(float uvScale) {
+        public Face SetUVForSize(float uvScale) {
             float width = Vector3.Distance(a, d);
             float height = Vector3.Distance(a, b);
-            SetUVFront(width * uvScale, height * uvScale);
+            return SetUVFront(width * uvScale, height * uvScale);
         }
 
-        public void SetUVFront(float width, float height) {
+        public Face SetUVProjected(float uvScale) {
+            float dlr = Mathf.Abs(Vector3.Dot(normal, Vector3.left));
+            float dfb = Mathf.Abs(Vector3.Dot(normal, Vector3.back));
+            float dud = Mathf.Abs(Vector3.Dot(normal, Vector3.up));
+            uvA = new Vector2((dlr*a.z + dfb*a.x + dud*a.x) * uvScale, (dlr*a.y + dfb*a.y + dud*a.z) * uvScale);
+            uvB = new Vector2((dlr*b.z + dfb*b.x + dud*b.x) * uvScale, (dlr*b.y + dfb*b.y + dud*b.z) * uvScale);
+            uvC = new Vector2((dlr*c.z + dfb*c.x + dud*c.x) * uvScale, (dlr*c.y + dfb*c.y + dud*c.z) * uvScale);
+            if (!isTriangle) {
+                uvD = new Vector2((dlr*d.z + dfb*d.x + dud*d.x) * uvScale, (dlr*d.y + dfb*d.y + dud*d.z) * uvScale);
+            }
+            return this;
+        }
+
+        public Face SetUVProjectedLocal(float uvScale) {
+            Vector3 localRight = ((isTriangle ? c : d) - a).normalized;
+            Vector3 localUp = Vector3.Cross(normal, localRight);
+            Face clone = DeepCopy().Rotate(Quaternion.Inverse(Quaternion.FromToRotation(Vector3.right, localRight)));
+            clone.SetUVProjected(uvScale);
+            SetUVFrom(clone);
+            return this;
+        }
+
+        public Face SetUVFrom(Face other) {
+            this.uvA = other.uvA;
+            this.uvB = other.uvB;
+            this.uvC = other.uvC;
+            this.uvD = other.uvD;
+            return this;
+        }
+
+        public Face SetUVFront(float width, float height) {
             uvA = new Vector2(0, 0);
             if (isTriangle) {
                 uvB = new Vector2(width/2, height);
@@ -182,15 +259,20 @@ namespace ProceduralStructures {
                 uvC = new Vector2(width, height);
                 uvD = new Vector2(width, 0);
             }
+            return this;
         }
 
-        public Face RotateUV() {
-            Quaternion rot = Quaternion.AngleAxis(90, Vector3.forward);
+        public Face RotateUV(Quaternion rot) {
             uvA = rot * uvA;
             uvB = rot * uvB;
             uvC = rot * uvC;
             uvD = rot * uvD;
             return this;
+        }
+
+        public Face RotateUV() {
+            Quaternion rot = Quaternion.AngleAxis(90, Vector3.forward);
+            return RotateUV(rot);
         }
     }
 }
