@@ -103,7 +103,7 @@ namespace ProceduralStructures {
             List<Face> innerWall = Builder.CloneAndMoveFacesOnNormal(outerWall, wall.wallThickness, wall.uvScale);
             // project it back on the ground, this should be done by above function
             for (int i = 0; i < points.Count; i++) {
-                Builder.MoveVertices(outerWall, points[i], Builder.MatchingVertex.XZ, originalPoints[i]);
+                Builder.MoveVertices(outerWall, points[i], Builder.MatchingVertex.XZ, originalPoints[i] + heightOffset);
             }
             for (int i = 0; i < outerWall.Count; i++) {
                 Face outer = outerWall[i];
