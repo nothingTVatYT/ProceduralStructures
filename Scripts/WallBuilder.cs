@@ -8,8 +8,8 @@ public class WallBuilder : MonoBehaviour
 
     void Start()
     {
-        UpdatePoints();
-        HideMarkers();
+        //UpdatePoints();
+        //HideMarkers();
     }
 
     // Update is called once per frame
@@ -47,7 +47,8 @@ public class WallBuilder : MonoBehaviour
         if (wall.useChildren) {
             children = new List<Transform>();
             foreach (Transform t in gameObject.transform) {
-                children.Add(t);
+                if (!t.gameObject.name.StartsWith("LOD"))
+                    children.Add(t);
             }
         } else {
             children = wall.points;
