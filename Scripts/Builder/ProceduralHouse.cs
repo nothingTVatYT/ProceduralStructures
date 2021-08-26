@@ -39,7 +39,18 @@ namespace ProceduralStructures {
                 lodGroup = target.AddComponent<LODGroup>();
             }
             GameObject go0 = Building.GetChildByName(target, "LOD0");
-            LOD lod0 = new LOD(0.5f, go0.GetComponentsInChildren<MeshRenderer>());
+            MeshRenderer[] lod0Renderers = go0.GetComponentsInChildren<MeshRenderer>();
+            GameObject add0 = Building.GetChildByName(target, Building.ADDED_INTERIOR);
+            if (add0 != null) {
+                MeshRenderer[] addLod0Renderers = add0.GetComponentsInChildren<MeshRenderer>();
+                if (addLod0Renderers != null && addLod0Renderers.Length > 0) {
+                    MeshRenderer[] total0 = new MeshRenderer[lod0Renderers.Length + addLod0Renderers.Length];
+                    System.Array.Copy(lod0Renderers, total0, lod0Renderers.Length);
+                    System.Array.Copy(addLod0Renderers, 0, total0, lod0Renderers.Length, addLod0Renderers.Length);
+                    lod0Renderers = total0;
+                }
+            }
+            LOD lod0 = new LOD(0.5f, lod0Renderers);
             GameObject go1 = Building.GetChildByName(target, "LOD1");
             LOD lod1 = new LOD(0.1f, go1.GetComponentsInChildren<MeshRenderer>());
             lodGroup.SetLODs(new LOD[] { lod0, lod1 });
@@ -134,13 +145,15 @@ namespace ProceduralStructures {
                     layer.ExtrudeEdges(new List<Vector3> {a, d, c, b, a}, Vector3.up * height, bs.uvScale);
                     foreach (HouseDefinition.WallCutout co in bs.cutouts) {
                         //layer.CutFront(co.dimension, bs.uvScale);
-                        Vector3 origin = center + new Vector3(co.dimension.x, co.dimension.y + co.dimension.height/2, 0);
+                        Vector3 origin = center + new Vector3(0, co.dimension.y + co.dimension.height/2, 0);
                         Vector3 direction = Vector3.back;
                         switch(co.side) {
                             case HouseDefinition.Side.Right: direction = Vector3.right; break;
                             case HouseDefinition.Side.Left: direction = Vector3.left; break;
                             case HouseDefinition.Side.Back: direction = Vector3.forward; break;
                         }
+                        Vector3 localRight = Vector3.Cross(direction, Vector3.up);
+                        origin += localRight * co.dimension.x;
                         layer.MakeHole(origin, direction, Vector3.up, co.dimension.width, co.dimension.height);
                         Face opening = layer.FindFirstFaceByTag(Builder.CUTOUT);
                         if (opening != null) {
