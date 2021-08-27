@@ -4,10 +4,14 @@ using UnityEngine;
 namespace ProceduralStructures {
     public class Building
     {
+        public delegate void ExcludeFromNavmesh(GameObject gameObject);
+        public ExcludeFromNavmesh excludeFromNavmesh;
+
         List<Face> faces = new List<Face>();
         Dictionary<Material, List<Face>> facesByMaterial = new Dictionary<Material, List<Face>>();
         public static string ADDED_INTERIOR = "generatedInterior";
         public static List<string> namesOfGeneratedObjects = new List<string> {"LOD0", "LOD1", "LOD2", ADDED_INTERIOR};
+        private List<Material> nonNavmeshStaticMaterials = new List<Material>();
 
         public List<Face> GetFacesByMaterial(Material material) {
             if (material == null) {
@@ -27,6 +31,10 @@ namespace ProceduralStructures {
             foreach (Face face in faces) {
                 GetFacesByMaterial(face.material).Add(face);
             }
+        }
+
+        public void ClearNavmeshStaticOnMaterial(Material material) {
+            nonNavmeshStaticMaterials.Add(material);
         }
 
         public void AddFace(Face face) {
@@ -77,6 +85,9 @@ namespace ProceduralStructures {
                 childByMaterial.transform.localRotation = Quaternion.identity;
                 childByMaterial.transform.localScale = Vector3.one;
                 childByMaterial.isStatic = target.isStatic;
+                if (nonNavmeshStaticMaterials.Contains(material) && excludeFromNavmesh != null) {
+                    excludeFromNavmesh(childByMaterial);
+                }
             }
             MeshFilter meshFilter = childByMaterial.GetComponent<MeshFilter>();
             if (meshFilter == null) {

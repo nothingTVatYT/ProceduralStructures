@@ -13,6 +13,7 @@ public class ProceduralStructuresRootEditor : Editor
             if (builder != null && builder.Length > 0) {
                 Debug.Log("Found " + builder.Length + " house builders.");
                 ProceduralStructures.ProceduralHouse p = new ProceduralStructures.ProceduralHouse();
+                p.excludeFromNavmesh += ExcludeFromNavmesh;
                 ProceduralStructures.Building building = new ProceduralStructures.Building();
                 foreach (HouseBuilder h in builder) {
                     Undo.RegisterFullObjectHierarchyUndo(h.gameObject, "Rebuild structures");
@@ -50,4 +51,9 @@ public class ProceduralStructuresRootEditor : Editor
             }
         }
     }
+    public void ExcludeFromNavmesh(GameObject gameObject) {
+        StaticEditorFlags flags = StaticEditorFlags.ContributeGI | StaticEditorFlags.OccluderStatic | StaticEditorFlags.BatchingStatic | StaticEditorFlags.OccludeeStatic | StaticEditorFlags.ReflectionProbeStatic;
+        GameObjectUtility.SetStaticEditorFlags(gameObject, flags);
+    }
+
 }

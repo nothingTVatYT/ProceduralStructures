@@ -4,6 +4,9 @@ using UnityEngine;
 namespace ProceduralStructures {
     public class ProceduralHouse {
 
+        public delegate void ExcludeFromNavmesh(GameObject gameObject);
+        public ExcludeFromNavmesh excludeFromNavmesh;
+
         class QueuedMakeHole {
             public QueuedMakeHole(Vector3 origin, Vector3 direction, Vector3 up, float width, float height, Material material, float maxDistance = 0) {
                 this.origin = origin;
@@ -366,6 +369,7 @@ namespace ProceduralStructures {
                 rightRoof.material = house.materialRoof;
                 building.AddFace(rightRoof);
                 building.AddObject(roofLayer);
+                building.ClearNavmeshStaticOnMaterial(house.materialRoof);
             }
 
             string name = "LOD" + lod;
@@ -377,7 +381,13 @@ namespace ProceduralStructures {
                 lodMeshes.transform.rotation = target.transform.rotation;
                 lodMeshes.isStatic = target.isStatic;
             }
+            building.excludeFromNavmesh += HouseExcludeFromNavmesh;
             building.Build(lodMeshes);
+        }
+
+        public void HouseExcludeFromNavmesh(GameObject gameObject) {
+            if (excludeFromNavmesh != null)
+                excludeFromNavmesh(gameObject);
         }
 
         Quaternion RotationFromSide(HouseDefinition.Side side) {

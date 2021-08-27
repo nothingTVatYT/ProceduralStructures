@@ -13,11 +13,17 @@ public class HouseBuilderEditor : Editor {
         if (GUILayout.Button("Rebuild with interior")) {
             Undo.RegisterFullObjectHierarchyUndo(houseBuilder.gameObject, "Rebuild with interior");
             ProceduralHouse p = new ProceduralHouse();
+            p.excludeFromNavmesh += ExcludeFromNavmesh;
             p.RebuildHouseWithInterior(houseBuilder.houseDefinition, houseBuilder.gameObject);
         }
         if (GUILayout.Button("Remove Meshes")) {
             Undo.RegisterFullObjectHierarchyUndo(houseBuilder.gameObject, "Remove meshes");
             new Building().ClearMeshes(houseBuilder.gameObject);
         }
+    }
+
+    public void ExcludeFromNavmesh(GameObject gameObject) {
+        StaticEditorFlags flags = StaticEditorFlags.ContributeGI | StaticEditorFlags.OccluderStatic | StaticEditorFlags.BatchingStatic | StaticEditorFlags.OccludeeStatic | StaticEditorFlags.ReflectionProbeStatic;
+        GameObjectUtility.SetStaticEditorFlags(gameObject, flags);
     }
 }
