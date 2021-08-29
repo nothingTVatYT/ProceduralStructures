@@ -15,6 +15,8 @@ namespace ProceduralStructures {
                 float streetLength = street.length;
 
                 for (int side = -1; side <= 1; side+=2) {
+                    if (side == -1 && street.abandonLeft) continue;
+                    if (side == 1 && street.abandonRight) continue;
                     int number = 1;
                     if (side > 0) number++;
                     float rightOffset = street.houseToHouse;
