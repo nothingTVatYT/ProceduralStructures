@@ -13,6 +13,8 @@ namespace ProceduralStructures {
         public float sortOrder = 0;
         public Material material;
 
+        public static float Epsilon = 1e-3f;
+
         public Face() {}
         public Face(Vector3 a, Vector3 b, Vector3 c, Vector3 d) {
             this.a = a;
@@ -24,13 +26,48 @@ namespace ProceduralStructures {
             SetUVFront(1, 1);
         }
 
-        public Face Repaired() {
+        public bool IsValid() {
             if (!isTriangle) {
-                if ((a-d).magnitude < 1e-3f) {
-                    isTriangle = true;
+                int distinctVertices = 4;
+                if ((a-b).magnitude < Epsilon) {
+                    distinctVertices--;
+                    b = c;
+                    c = d;
+                    if ((a-b).magnitude < Epsilon) {
+                        return false;
+                    }
                 }
+                if ((a-c).magnitude < Epsilon) {
+                    distinctVertices--;
+                    c = d;
+                }
+                if ((b-c).magnitude < Epsilon) {
+                    distinctVertices--;
+                    c = d;
+                    if ((b-c).magnitude < Epsilon) {
+                        return false;
+                    }
+                    if ((a-c).magnitude < Epsilon) {
+                        return false;
+                    }
+                }
+                if (distinctVertices == 4 && ((c-d).magnitude < Epsilon || (d-a).magnitude < Epsilon)) {
+                    distinctVertices--;
+                }
+                if (distinctVertices == 4) {
+                    return true;
+                }
+                if (distinctVertices == 3) {
+                    isTriangle = true;
+                    return true;
+                }
+                return false;
             }
-            return this;
+            if (isTriangle) {
+                if ((a-b).magnitude < Epsilon || (b-c).magnitude < Epsilon || (c-a).magnitude < Epsilon)
+                    return false;
+            }
+            return true;
         }
 
         public Face(Vector3 a, Vector3 b, Vector3 c) {
@@ -238,6 +275,9 @@ namespace ProceduralStructures {
 
         public override string ToString() {
             // return "F(" + a +"," + b + "," + c + "," + d + ")";
+            if (isTriangle) {
+                return string.Format("F(a={0},b={1},c={2},normal={3},tags={4})", a, b, c, normal, tags);
+            }
             return string.Format("F(a={0},b={1},c={2},d={3},normal={4},tags={5})", a, b, c, d, normal, tags);
         }
         public bool IsTagged(int tag) {
@@ -279,10 +319,30 @@ namespace ProceduralStructures {
         public Face SetUVProjectedLocal(float uvScale) {
             Vector3 localRight = ((isTriangle ? c : d) - a).normalized;
             Vector3 localUp = Vector3.Cross(normal, localRight);
-            Face clone = DeepCopy().Rotate(Quaternion.Inverse(Quaternion.FromToRotation(Vector3.right, localRight)));
+            if (localUp == Vector3.zero || normal == Vector3.zero) {
+                Debug.LogWarning("invalid face: " + this);
+            }
+            //Face clone = DeepCopy().Rotate(Quaternion.Inverse(Quaternion.FromToRotation(Vector3.right, localRight)));
+            Face clone = DeepCopy().Rotate(Quaternion.LookRotation(localUp, normal));
             clone.SetUVProjected(uvScale);
             SetUVFrom(clone);
             return this;
+        }
+
+        public Face SetUVCylinderProjection(Vector3 center, Vector3 direction, float uOffset, float uvScale) {
+            uvA = UVCylinderProjection(a, center, direction, uOffset, uvScale);
+            uvB = UVCylinderProjection(b, center, direction, uOffset, uvScale);
+            uvC = UVCylinderProjection(c, center, direction, uOffset, uvScale);
+            uvD = UVCylinderProjection(d, center, direction, uOffset, uvScale);
+            return this;
+        }
+
+        private static Vector2 UVCylinderProjection(Vector3 vertex, Vector3 center, Vector3 direction, float uOffset, float uvScale) {
+            float dot = Vector3.Dot(vertex - center, direction);
+            Vector3 ms = center + dot*direction;
+            // this should be replaced with a v scale setting
+            float r = 5;
+            return new Vector2((dot+uOffset) * uvScale, Vector3.Angle(vertex - ms, Vector3.down) / 180f * r * uvScale);
         }
 
         public Face SetUVFrom(Face other) {

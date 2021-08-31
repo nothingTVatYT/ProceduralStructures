@@ -7,6 +7,9 @@ namespace ProceduralStructures {
     public class CaveDefinition {
 
         public enum Shape { Tunnel, O_Shaped }
+        [Tooltip("number of times interpolated vertices are added")]
+        [Range(0,5)]
+        public int shapeSmoothing;
         public List<Vector3> wayPoints;
         [Tooltip("Shape of the cave")]
         public Shape crosscutShape;

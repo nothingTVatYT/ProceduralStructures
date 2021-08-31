@@ -192,11 +192,15 @@ namespace ProceduralStructures {
                 shapeEdgeList = ConstructTunnelShape(cave.baseWidth, cave.baseHeight);
                 break;
             }
+            for(int i = 0; i < cave.shapeSmoothing; i++) {
+                shapeEdgeList = SmoothVertices(shapeEdgeList);
+            }
             List<Vector3> previousEdgeLoop = null;
             List<Face> previousAddedFaces = null;
             Vector3 previousPosition = Vector3.zero;
             Vector3 previousDirection = Vector3.zero;
             int idx = 0;
+            float uOffset = 0;
             foreach (Tangent tangent in cave.GetTangents()) {
                 Vector3 localPos = tangent.position - target.transform.position;
                 Quaternion localRotation = Quaternion.LookRotation(tangent.direction, Vector3.up);
@@ -208,15 +212,18 @@ namespace ProceduralStructures {
                     float w = cave.baseWidth/2;
                     Vector3 m = previousPosition + right0 * w - right * w;
                     // there is a collision if the current location is nearer than m
+                    Vector3 plane = localPos + (previousPosition - localPos) / 2;
+                    Vector3 planeNormal = (previousDirection + tangent.direction) / 2;
                     if ((localPos - previousPosition).sqrMagnitude < (m - previousPosition).sqrMagnitude) {
                         //Debug.LogFormat("#{0}, m = {1}, localPos = {2}, previousPosition = {3}", idx, m, localPos, previousPosition);
-                        Vector3 plane = localPos + (previousPosition - localPos) / 2;
-                        Vector3 planeNormal = (previousDirection + tangent.direction) / 2;
                         // clamp generatedFaces to plane in normal direction and previous to opposite
                         //Debug.LogFormat("plane({0},{1}), current {2}, previous {3}", plane, planeNormal, currentEdgeLoop.Elements(), previousEdgeLoop.Elements());
                         cavemesh.ClampToPlane(currentEdgeLoop, previousEdgeLoop, plane, planeNormal);
                     }
                     List<Face> generatedFaces = Builder.BridgeEdgeLoopsPrepared(previousEdgeLoop, currentEdgeLoop, cave.uvScale);
+                    //Builder.SetUVCylinderProjection(generatedFaces, plane + Vector3.up * cave.baseHeight/2, planeNormal, uOffset, cave.uvScale);
+                    Vector3 cylinderCenter = (Builder.FindCentroid(currentEdgeLoop) + Builder.FindCentroid(previousEdgeLoop))/2;
+                    Builder.SetUVCylinderProjection(generatedFaces, cylinderCenter, planeNormal, uOffset, cave.uvScale);
                     cavemesh.AddFaces(generatedFaces);
                     previousPosition = localPos;
                     previousDirection = tangent.direction;
@@ -235,6 +242,7 @@ namespace ProceduralStructures {
                     }
                     previousEdgeLoop = currentEdgeLoop;
                 }
+                uOffset += (previousPosition - localPos).magnitude;
                 idx++;
             }
             // this is the last crosscut
@@ -244,8 +252,23 @@ namespace ProceduralStructures {
                 frontFace.SetUVBoxProjection(cave.uvScale);
                 cavemesh.AddObject(frontFace);
             }
+            //cavemesh.SetUVBoxProjection(cave.uvScale);
             building.AddObject(cavemesh);
             building.Build(target, 0);
+        }
+
+        public List<Vector3> SmoothVertices(List<Vector3> l) {
+            Vector3 center = Builder.FindCentroid(l);
+            List<Vector3> newList = new List<Vector3>(l.Count*2);
+            for (int i = 0; i < l.Count; i++) {
+                newList.Add(l[i]);
+                int j = i < l.Count-1 ? i+1 : 0;
+                Vector3 interpolated = (l[i] + l[j])/2f;
+                float smoothedDist = ((center - l[i]).magnitude + (center - l[j]).magnitude)/2;
+                float dist = (interpolated - center).magnitude;
+                newList.Add(interpolated / dist * smoothedDist);
+            }
+            return newList;
         }
 
         private List<Vector3> ConstructTunnelShape(float width, float height) {

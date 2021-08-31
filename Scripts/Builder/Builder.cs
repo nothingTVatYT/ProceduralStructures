@@ -113,6 +113,12 @@ namespace ProceduralStructures {
             return result;
         }
 
+        public static void SetUVCylinderProjection(List<Face> faces, Vector3 center, Vector3 direction, float uOffset, float uvScale) {
+            foreach (Face face in faces) {
+                face.SetUVCylinderProjection(center, direction, uOffset, uvScale);
+            }
+        }
+
         public static List<Face> ExtrudeEdges(List<Vector3> vertices, Vector3 direction, float uvScale=1f) {
             List<Face> faces = new List<Face>();
             Vector3 prev = Vector3.zero;
@@ -149,9 +155,11 @@ namespace ProceduralStructures {
             CircularReadonlyList<Vector3> toRing = new CircularReadonlyList<Vector3>(toVertices);
             List<Face> faces = new List<Face>();
             for (int i = 0; i < fromRing.Count; i++) {
-                Face face = new Face(fromRing[i], fromRing[i+1], toRing[i+1], toRing[i]).Repaired();
-                face.SetUVProjected(uvScale);
-                faces.Add(face);
+                Face face = new Face(fromRing[i], fromRing[i+1], toRing[i+1], toRing[i]);
+                if (face.IsValid()) {
+                    face.SetUVProjected(uvScale);
+                    faces.Add(face);
+                }
             }
             return faces;
         }

@@ -99,8 +99,8 @@ namespace ProceduralStructures {
                 meshRenderer = childByMaterial.AddComponent<MeshRenderer>();
             }
             meshRenderer.sharedMaterial = material;
-            mesh.RecalculateNormals();
             mesh.Optimize();
+            mesh.RecalculateNormals();
             MeshCollider meshCollider = childByMaterial.GetComponent<MeshCollider>();
             if (meshCollider == null) {
                 meshCollider = childByMaterial.AddComponent<MeshCollider>();
