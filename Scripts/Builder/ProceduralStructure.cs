@@ -267,7 +267,7 @@ namespace ProceduralStructures {
         private List<Vector3> ConstructOShape(float width, float height) {
             List<Vector3> result = new List<Vector3>(12);
             for (int i = 0; i < 12; i++) {
-                result.Add(new Vector3(width/2 * Mathf.Sin(i*30*2*Mathf.PI), height/2 + height/2 * Mathf.Cos(i*30*2*Mathf.PI), 0));
+                result.Add(new Vector3(width/2 * Mathf.Sin(Mathf.Deg2Rad * i*30), height/2 + height/2 * Mathf.Cos(Mathf.Deg2Rad * i*30), 0));
             }
             return result;
         }
