@@ -1,5 +1,6 @@
 using System.Collections.Generic;
 using UnityEngine;
+using ExtensionMethods;
 
 namespace ProceduralStructures {
     public class ProceduralStructure {
@@ -173,6 +174,101 @@ namespace ProceduralStructures {
             result.AddFaces(Builder.ExtrudeEdges(top, Vector3.down * height, uvScale));
             result.AddFace(top);
             result.position = center;
+            return result;
+        }
+
+        public void RebuildCave(CaveDefinition cave, GameObject target) {
+            Building building = new Building();
+            BuildingObject cavemesh = new BuildingObject();
+            cavemesh.material = cave.material;
+            // construct the shape
+            List<Vector3> shapeEdgeList = new List<Vector3>();
+            switch (cave.crosscutShape) {
+                case CaveDefinition.Shape.O_Shaped:
+                shapeEdgeList = ConstructOShape(cave.baseWidth, cave.baseHeight);
+                break;
+                case CaveDefinition.Shape.Tunnel:
+                default:
+                shapeEdgeList = ConstructTunnelShape(cave.baseWidth, cave.baseHeight);
+                break;
+            }
+            List<Vector3> previousEdgeLoop = null;
+            List<Face> previousAddedFaces = null;
+            Vector3 previousPosition = Vector3.zero;
+            Vector3 previousDirection = Vector3.zero;
+            int idx = 0;
+            foreach (Tangent tangent in cave.GetTangents()) {
+                Vector3 localPos = tangent.position - target.transform.position;
+                Quaternion localRotation = Quaternion.LookRotation(tangent.direction, Vector3.up);
+                List<Vector3> currentEdgeLoop = Builder.MoveVertices(Builder.RotateVertices(shapeEdgeList, localRotation), localPos);
+                if (previousEdgeLoop != null) {
+                    // only add it if there is no overlap
+                    Vector3 right = Vector3.Cross(tangent.direction, Vector3.up);
+                    Vector3 right0 = Vector3.Cross(previousDirection, Vector3.up);
+                    float w = cave.baseWidth/2;
+                    Vector3 m = previousPosition + right0 * w - right * w;
+                    // there is a collision if the current location is nearer than m
+                    if ((localPos - previousPosition).sqrMagnitude < (m - previousPosition).sqrMagnitude) {
+                        //Debug.LogFormat("#{0}, m = {1}, localPos = {2}, previousPosition = {3}", idx, m, localPos, previousPosition);
+                        Vector3 plane = localPos + (previousPosition - localPos) / 2;
+                        Vector3 planeNormal = (previousDirection + tangent.direction) / 2;
+                        // clamp generatedFaces to plane in normal direction and previous to opposite
+                        //Debug.LogFormat("plane({0},{1}), current {2}, previous {3}", plane, planeNormal, currentEdgeLoop.Elements(), previousEdgeLoop.Elements());
+                        cavemesh.ClampToPlane(currentEdgeLoop, previousEdgeLoop, plane, planeNormal);
+                    }
+                    List<Face> generatedFaces = Builder.BridgeEdgeLoopsPrepared(previousEdgeLoop, currentEdgeLoop, cave.uvScale);
+                    cavemesh.AddFaces(generatedFaces);
+                    previousPosition = localPos;
+                    previousDirection = tangent.direction;
+                    previousAddedFaces = generatedFaces;
+                    previousEdgeLoop = currentEdgeLoop;
+                } else {
+                    // this is the first crosscut
+                    previousPosition = localPos;
+                    previousDirection = tangent.direction;
+                    if (cave.closeEnds) {
+                        BuildingObject frontFace = new BuildingObject();
+                        frontFace.AddFaces(Face.PolygonToTriangleFan(currentEdgeLoop));
+                        frontFace.InvertNormals();
+                        frontFace.SetUVBoxProjection(cave.uvScale);
+                        cavemesh.AddObject(frontFace);
+                    }
+                    previousEdgeLoop = currentEdgeLoop;
+                }
+                idx++;
+            }
+            // this is the last crosscut
+            if (cave.closeEnds && previousEdgeLoop != null) {
+                BuildingObject frontFace = new BuildingObject();
+                frontFace.AddFaces(Face.PolygonToTriangleFan(previousEdgeLoop));
+                frontFace.SetUVBoxProjection(cave.uvScale);
+                cavemesh.AddObject(frontFace);
+            }
+            building.AddObject(cavemesh);
+            building.Build(target, 0);
+        }
+
+        private List<Vector3> ConstructTunnelShape(float width, float height) {
+            Vector3 a = new Vector3(0, 0, 0);
+            Vector3 b = new Vector3(-0.4f * width, 0.06f * height, 0);
+            Vector3 c = new Vector3(-0.5f * width, 0.12f * height, 0);
+            Vector3 d = new Vector3(-0.5f * width, 0.58f * height, 0);
+            Vector3 e = new Vector3(-0.36f * width, 0.84f * height, 0);
+            Vector3 f = new Vector3(-0.18f * width, 0.97f * height, 0);
+            Vector3 g = new Vector3(0, height, 0);
+            Vector3 h = new Vector3(-f.x, f.y, 0);
+            Vector3 i = new Vector3(-e.x, e.y, 0);
+            Vector3 j = new Vector3(-d.x, d.y, 0);
+            Vector3 k = new Vector3(-c.x, c.y, 0);
+            Vector3 l = new Vector3(-b.x, b.y, 0);
+            return new List<Vector3> { a, b, c, d, e, f, g, h, i, j, k, l };
+        }
+
+        private List<Vector3> ConstructOShape(float width, float height) {
+            List<Vector3> result = new List<Vector3>(12);
+            for (int i = 0; i < 12; i++) {
+                result.Add(new Vector3(width/2 * Mathf.Sin(i*30*2*Mathf.PI), height/2 + height/2 * Mathf.Cos(i*30*2*Mathf.PI), 0));
+            }
             return result;
         }
     }

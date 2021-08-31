@@ -5,7 +5,7 @@ using UnityEngine;
 namespace ProceduralStructures {
     public static class Builder {
         public static int CUTOUT = 1;
-        public enum MatchingVertex { XY, XZ, YZ }
+        public enum MatchingVertex { XY, XZ, YZ, XYZ }
         public static List<Face> IndentFace(Face face, Vector3 direction, float uvScale=1f) {
             List<Face> faces = new List<Face>();
             Vector3 prev = Vector3.zero;
@@ -97,6 +97,22 @@ namespace ProceduralStructures {
             }
         }
 
+        public static List<Vector3> MoveVertices(List<Vector3> list, Vector3 translation) {
+            List<Vector3> result = new List<Vector3>(list.Count);
+            foreach (Vector3 v in list) {
+                result.Add(v + translation);
+            }
+            return result;
+        }
+
+        public static List<Vector3> RotateVertices(List<Vector3> list, Quaternion rotation) {
+            List<Vector3> result = new List<Vector3>(list.Count);
+            foreach (Vector3 v in list) {
+                result.Add(rotation * v);
+            }
+            return result;
+        }
+
         public static List<Face> ExtrudeEdges(List<Vector3> vertices, Vector3 direction, float uvScale=1f) {
             List<Face> faces = new List<Face>();
             Vector3 prev = Vector3.zero;
@@ -126,6 +142,18 @@ namespace ProceduralStructures {
                 result.Add(face);
             }
             return result;
+        }
+
+        public static List<Face> BridgeEdgeLoopsPrepared(List<Vector3> fromVertices, List<Vector3> toVertices, float uvScale = 1f) {
+            CircularReadonlyList<Vector3> fromRing = new CircularReadonlyList<Vector3>(fromVertices);
+            CircularReadonlyList<Vector3> toRing = new CircularReadonlyList<Vector3>(toVertices);
+            List<Face> faces = new List<Face>();
+            for (int i = 0; i < fromRing.Count; i++) {
+                Face face = new Face(fromRing[i], fromRing[i+1], toRing[i+1], toRing[i]).Repaired();
+                face.SetUVProjected(uvScale);
+                faces.Add(face);
+            }
+            return faces;
         }
 
         public static List<Face> BridgeEdgeLoops(List<Vector3> fromVertices, List<Vector3> toVertices, float uvScale=1f) {
@@ -182,6 +210,32 @@ namespace ProceduralStructures {
 
         public static List<Face> ExtrudeEdges(Face face, Vector3 direction, float uvScale = 1f) {
             return ExtrudeEdges(new List<Vector3> {face.a, face.b, face.c, face.d, face.a}, direction, uvScale);
+        }
+
+        public static void ClampToPlane(List<Vector3> front, List<Vector3> back, Vector3 plane, Vector3 normal) {
+            for (int i = 0; i < front.Count; i++) {
+                // if vertex is behind the plane (not on normal side) project it on the plane
+                float dot = Vector3.Dot(front[i] - plane, normal);
+                if (dot < 0) {
+                    Vector3 v = front[i] - plane;
+                    float dist = v.x*normal.x + v.y*normal.y + v.z*normal.z;
+                    Vector3 projected = front[i] - dist*normal;
+                    // collapse front and back vertices
+                    Debug.LogFormat("move front {0} to {1}, dist={2}", front[i], projected, dist);
+                    front[i] = projected;
+                    back[i] = projected;
+                } else {
+                    dot = Vector3.Dot(back[i] - plane, normal);
+                    if (dot > 0) {
+                        Vector3 v = back[i] - plane;
+                        float dist = v.x*normal.x + v.y*normal.y + v.z*normal.z;
+                        Vector3 projected = back[i] - dist*normal;
+                        Debug.LogFormat("move back {0} to {1}, dist={2]", front[i], projected, dist);
+                        front[i] = projected;
+                        back[i] = projected;
+                    }
+                }
+            }
         }
 
         public static List<Face> CloneAndMoveFacesOnNormal(List<Face> faces, float thickness, float uvScale) {
@@ -249,6 +303,9 @@ namespace ProceduralStructures {
                     break;
                 case MatchingVertex.YZ:
                     result = Mathf.Approximately(v.y, pattern.y) && Mathf.Approximately(v.z, pattern.z);
+                    break;
+                case MatchingVertex.XYZ:
+                    result = Mathf.Approximately(v.x, pattern.x) && Mathf.Approximately(v.y, pattern.y) && Mathf.Approximately(v.z, pattern.z);
                     break;
             }
             return result;

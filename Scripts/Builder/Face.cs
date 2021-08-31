@@ -23,6 +23,16 @@ namespace ProceduralStructures {
             // initialize UV
             SetUVFront(1, 1);
         }
+
+        public Face Repaired() {
+            if (!isTriangle) {
+                if ((a-d).magnitude < 1e-3f) {
+                    isTriangle = true;
+                }
+            }
+            return this;
+        }
+
         public Face(Vector3 a, Vector3 b, Vector3 c) {
             this.a = a;
             this.b = b;
@@ -30,6 +40,40 @@ namespace ProceduralStructures {
             isTriangle = true;
             // initialize UV
             SetUVFront(1, 1);
+        }
+
+        public static List<Face> PolygonToTriangles(List<Vector3> l) {
+            List<Face> result = new List<Face>();
+            if (l.Count >= 3) {
+                for (int i = 1; i < l.Count - 1; i++) {
+                    int j = i < l.Count-1 ? i+1 : 1;
+                    Face f = new Face(l[0], l[i], l[j]);
+                    result.Add(f);
+                }
+            }
+            return result;
+        }
+
+        public static List<Face> PolygonToTriangleFan(List<Vector3> l) {
+            Vector3 centroid = Builder.FindCentroid(l);
+            List<Face> result = new List<Face>();
+            if (l.Count >= 3) {
+                for (int i = 0; i < l.Count; i++) {
+                    int j = i < l.Count-1 ? i+1 : 0;
+                    Face f = new Face(centroid, l[i], l[j]);
+                    f.SetUVProjected(1);
+                    result.Add(f);
+                }
+            }
+            
+            return result;
+        }
+
+        public static Face QuadOnPlane(Vector3 o, Vector3 normal, float scale) {
+            Vector3 left = Vector3.Cross(normal, Vector3.up);
+            Vector3 localUp = Vector3.Cross(normal, left) * scale;
+            left = left * scale;
+            return new Face(o + left - localUp, o + left + localUp, o  - left + localUp, o - left - localUp).SetUVForSize(1);
         }
 
         public Face(Edge edge1, Edge edge2) {

@@ -94,6 +94,13 @@ namespace ProceduralStructures {
             return this;
         }
 
+        public BuildingObject MoveFaces(Vector3 offset) {
+            foreach (Face face in faces) {
+                face.MoveFaceBy(offset);
+            }
+            return this;
+        }
+
         public BuildingObject RotateUVs() {
             foreach (Face face in faces) {
                 face.RotateUV();
@@ -140,6 +147,13 @@ namespace ProceduralStructures {
 
         public BuildingObject MoveVertices(Vector3 from, Builder.MatchingVertex matching, Vector3 to) {
             Builder.MoveVertices(faces, from, matching, to);
+            return this;
+        }
+
+        public BuildingObject InvertNormals() {
+            foreach (Face face in faces) {
+                face.InvertNormals();
+            }
             return this;
         }
 
@@ -352,5 +366,21 @@ namespace ProceduralStructures {
             return this;
         }
 
+        public void ClampToPlane(List<Vector3> front, List<Vector3> back, Vector3 plane, Vector3 normal) {
+            for (int i = 0; i < front.Count; i++) {
+                // if vertex is behind the plane (not on normal side) project it on the plane
+                float dot = Vector3.Dot(front[i] - plane, normal);
+                if (dot < 0) {
+                    Vector3 v = front[i] - plane;
+                    float dist = v.x*normal.x + v.y*normal.y + v.z*normal.z;
+                    Vector3 projected = front[i] - dist*normal;
+                    // collapse front and back vertices
+                    MoveVertices(front[i], Builder.MatchingVertex.XYZ, projected);
+                    MoveVertices(back[i], Builder.MatchingVertex.XYZ, projected);
+                    front[i] = projected;
+                    back[i] = projected;
+                }
+            }
+        }
     }
 }
