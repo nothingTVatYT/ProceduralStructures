@@ -24,7 +24,7 @@ MonoBehaviour:
     wallThickness: 0.5
     slopeX: 0.1
     slopeZ: 0.1
-    material: {fileID: 2100000, guid: 9e2aae7ee83e19d468a3f2d21f2fe4ae, type: 2}
+    material: {fileID: 2100000, guid: 3f7f4e07f8ffed27e94b8c743779b0e0, type: 2}
     uvScale: 1
     cutouts: []
     stairs: []
@@ -36,7 +36,7 @@ MonoBehaviour:
     wallThickness: 0.5
     slopeX: 0
     slopeZ: 0
-    material: {fileID: 2100000, guid: ef3aeaa0049cbe447969df3bee614da1, type: 2}
+    material: {fileID: 2100000, guid: 4f1b68ee85968528ab3abf24b5ac60df, type: 2}
     uvScale: 1
     cutouts:
     - name: Door
@@ -61,12 +61,12 @@ MonoBehaviour:
       totalHeight: 1
       stepHeight: 0.3
       stepDepth: 0.3
-      material: {fileID: 2100000, guid: 9e2aae7ee83e19d468a3f2d21f2fe4ae, type: 2}
+      material: {fileID: 2100000, guid: 4f1b68ee85968528ab3abf24b5ac60df, type: 2}
       uvScale: 1
   roofHeight: 3
-  materialRoof: {fileID: 2100000, guid: 1b74884212c29f24c9e3e557378c899f, type: 2}
+  materialRoof: {fileID: 2100000, guid: d566042ee4cf61a65936ea503b1733d5, type: 2}
   uvScaleRoof: 0.5
-  materialGable: {fileID: 2100000, guid: ef3aeaa0049cbe447969df3bee614da1, type: 2}
+  materialGable: {fileID: 2100000, guid: 4f1b68ee85968528ab3abf24b5ac60df, type: 2}
   uvScaleGable: 1
   roofExtendX: 0.5
   roofExtendZ: 0.5

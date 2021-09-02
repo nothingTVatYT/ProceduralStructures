@@ -24,7 +24,7 @@ MonoBehaviour:
     wallThickness: 0
     slopeX: 0
     slopeZ: 0
-    material: {fileID: 2100000, guid: ae42858ea84df3d4c80e04db974d7179, type: 2}
+    material: {fileID: 2100000, guid: 1cac97f7b3db6c0c483beda31a545460, type: 2}
     uvScale: 1
     cutouts: []
     stairs: []
@@ -36,7 +36,7 @@ MonoBehaviour:
     wallThickness: 0.3
     slopeX: 0
     slopeZ: 0
-    material: {fileID: 2100000, guid: ae42858ea84df3d4c80e04db974d7179, type: 2}
+    material: {fileID: 2100000, guid: 1cac97f7b3db6c0c483beda31a545460, type: 2}
     uvScale: 1
     cutouts:
     - name: Door1
@@ -47,8 +47,9 @@ MonoBehaviour:
         y: 0.1
         width: 2
         height: 2.2
-      material: {fileID: 2100000, guid: 1ba65a59041a6d0448ce7b2b8605bd5a, type: 2}
+      material: {fileID: 2100000, guid: 1e8afc4701380a98abee3ad10f39e1fb, type: 2}
       uvScale: 0.5
+      prefab: {fileID: 0}
     - name: Door2
       side: 3
       dimension:
@@ -57,8 +58,9 @@ MonoBehaviour:
         y: 0.1
         width: 2
         height: 2.2
-      material: {fileID: 2100000, guid: 1ba65a59041a6d0448ce7b2b8605bd5a, type: 2}
+      material: {fileID: 2100000, guid: 1e8afc4701380a98abee3ad10f39e1fb, type: 2}
       uvScale: 0.5
+      prefab: {fileID: 0}
     - name: Door3
       side: 1
       dimension:
@@ -67,8 +69,9 @@ MonoBehaviour:
         y: 0.1
         width: 2
         height: 2.2
-      material: {fileID: 2100000, guid: 1ba65a59041a6d0448ce7b2b8605bd5a, type: 2}
+      material: {fileID: 2100000, guid: 1e8afc4701380a98abee3ad10f39e1fb, type: 2}
       uvScale: 0.5
+      prefab: {fileID: 0}
     stairs: []
   - name: Second Floor
     height: 3
@@ -78,7 +81,7 @@ MonoBehaviour:
     wallThickness: 0.3
     slopeX: 0
     slopeZ: 0
-    material: {fileID: 2100000, guid: ae42858ea84df3d4c80e04db974d7179, type: 2}
+    material: {fileID: 2100000, guid: 1cac97f7b3db6c0c483beda31a545460, type: 2}
     uvScale: 1
     cutouts: []
     stairs: []
@@ -90,15 +93,14 @@ MonoBehaviour:
     wallThickness: 0.3
     slopeX: 0
     slopeZ: 0
-    material: {fileID: 2100000, guid: ae42858ea84df3d4c80e04db974d7179, type: 2}
+    material: {fileID: 2100000, guid: 1cac97f7b3db6c0c483beda31a545460, type: 2}
     uvScale: 1
     cutouts: []
     stairs: []
   roofHeight: 1
-  gableWidth: 0
   materialRoof: {fileID: 2100000, guid: d566042ee4cf61a65936ea503b1733d5, type: 2}
   uvScaleRoof: 1
-  materialGable: {fileID: 2100000, guid: ae42858ea84df3d4c80e04db974d7179, type: 2}
+  materialGable: {fileID: 2100000, guid: 1cac97f7b3db6c0c483beda31a545460, type: 2}
   uvScaleGable: 1
   roofExtendX: 0.5
   roofExtendZ: 0.5
