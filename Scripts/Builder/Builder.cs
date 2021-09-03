@@ -113,6 +113,14 @@ namespace ProceduralStructures {
             return result;
         }
 
+        public static List<Vector3> ScaleVertices(List<Vector3> list, Vector3 scale) {
+            List<Vector3> result = new List<Vector3>(list.Count);
+            foreach (Vector3 v in list) {
+                result.Add(Vector3.Scale(v, scale));
+            }
+            return result;
+        }
+
         public static void SetUVCylinderProjection(List<Face> faces, Vector3 center, Vector3 direction, float uOffset, float uvScale) {
             foreach (Face face in faces) {
                 face.SetUVCylinderProjection(center, direction, uOffset, uvScale);

@@ -178,6 +178,22 @@ namespace ProceduralStructures {
         }
 
         public void RebuildCave(CaveDefinition cave, GameObject target) {
+            foreach (WayPointList tunnel in cave.wayPointLists) {
+                GameObject tunnelObject = Building.GetChildByName(target, tunnel.name);
+                if (tunnelObject == null) {
+                    tunnelObject = new GameObject();
+                    tunnelObject.name = tunnel.name;
+                    tunnelObject.transform.parent = target.transform;
+                    tunnelObject.transform.localPosition = Vector3.zero;
+                    tunnelObject.transform.localScale = Vector3.one;
+                    tunnelObject.transform.localRotation = Quaternion.identity;
+                    tunnelObject.isStatic = target.isStatic;
+                }
+                RebuildCave(cave, tunnel, tunnelObject);
+            }
+        }
+
+        public void RebuildCave(CaveDefinition cave, WayPointList tunnel, GameObject target) {
             Building building = new Building();
             BuildingObject cavemesh = new BuildingObject();
             cavemesh.material = cave.material;
@@ -201,10 +217,12 @@ namespace ProceduralStructures {
             Vector3 previousDirection = Vector3.zero;
             int idx = 0;
             float uOffset = 0;
-            foreach (Tangent tangent in cave.GetTangents()) {
+            foreach (Tangent tangent in cave.GetTangents(tunnel)) {
                 Vector3 localPos = tangent.position - target.transform.position;
                 Quaternion localRotation = Quaternion.LookRotation(tangent.direction, Vector3.up);
-                List<Vector3> currentEdgeLoop = Builder.MoveVertices(Builder.RotateVertices(shapeEdgeList, localRotation), localPos);
+                Vector3 localScale = new Vector3(tangent.scaleWidth, tangent.scaleHeight, 1f);
+                List<Vector3> currentEdgeLoop = Builder.MoveVertices(Builder.RotateVertices(
+                    Builder.ScaleVertices(shapeEdgeList, localScale), localRotation), localPos);
                 if (previousEdgeLoop != null) {
                     // only add it if there is no overlap
                     Vector3 right = Vector3.Cross(tangent.direction, Vector3.up);

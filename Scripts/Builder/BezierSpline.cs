@@ -4,7 +4,7 @@ using System.Collections.Generic;
 namespace ProceduralStructures {
 	public class BezierSpline {
 
-		private List<Vector3> points;
+		private List<WayPoint> points;
 		private Vector3[] controlPoints1;
 		private Vector3[] controlPoints2;
 		private float[] estimatedSegmentLength;
@@ -12,11 +12,15 @@ namespace ProceduralStructures {
 
 		public float EstimatedLength { get { return estimatedLength; } }
 
-		public BezierSpline(List<Vector3> points) {
+		public BezierSpline(List<WayPoint> points) {
 			this.points = points;
 			estimatedSegmentLength = new float[points.Count-1];
 			estimatedLength = 0;
-			GetCurveControlPoints(points, out controlPoints1, out controlPoints2);
+			List<Vector3> vectors = new List<Vector3>(points.Count);
+			foreach (WayPoint wp in points) {
+				vectors.Add(wp.position);
+			}
+			GetCurveControlPoints(vectors, out controlPoints1, out controlPoints2);
 			for (int i = 0; i < points.Count-1; i++) {
 				estimatedSegmentLength[i] = EstimateSegmentLength(i, 10);
 				estimatedLength += estimatedSegmentLength[i];
@@ -29,7 +33,7 @@ namespace ProceduralStructures {
 			float segmentT;
 			int segment = GetSegment(t, out s, out segmentT);
 			if (segment > points.Count-2) segment = points.Count-2;
-			return GetInterpolatedPoint(points[segment], controlPoints1[segment], controlPoints2[segment], points[segment+1], segmentT);
+			return GetInterpolatedPoint(points[segment].position, controlPoints1[segment], controlPoints2[segment], points[segment+1].position, segmentT);
 		}
 
 		public Tangent GetTangent(float t) {
@@ -38,17 +42,19 @@ namespace ProceduralStructures {
 			float segmentT;
 			int segment = GetSegment(t, out s, out segmentT);
 			if (segment > points.Count-2) segment = points.Count-2;
-			Tangent tangent = GetInterpolatedTangent(points[segment], controlPoints1[segment], controlPoints2[segment], points[segment+1], segmentT);
+			Tangent tangent = GetInterpolatedTangent(points[segment].position, controlPoints1[segment], controlPoints2[segment], points[segment+1].position, segmentT);
 			tangent.relativePosition = t;
+			tangent.scaleWidth = Mathf.Lerp(points[segment].scaleWidth, points[segment+1].scaleWidth, segmentT);
+			tangent.scaleHeight = Mathf.Lerp(points[segment].scaleHeight, points[segment+1].scaleHeight, segmentT);
 			return tangent; 
 		}
 
 		private float EstimateSegmentLength(int segment, int steps) {
 			float result = 0;
-			Vector3 prev = points[segment];
+			Vector3 prev = points[segment].position;
 			for (int i = 1; i <= steps; i++) {
 				float t = i * 1f/steps;
-				Vector3 v = GetInterpolatedPoint(points[segment], controlPoints1[segment], controlPoints2[segment], points[segment+1], t);
+				Vector3 v = GetInterpolatedPoint(points[segment].position, controlPoints1[segment], controlPoints2[segment], points[segment+1].position, t);
 				result += (v-prev).magnitude;
 				prev = v;
 			}

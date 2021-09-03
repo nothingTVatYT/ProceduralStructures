@@ -7,6 +7,8 @@ namespace ProceduralStructures {
         public Vector3 position;
         public Vector3 direction;
         public float relativePosition;
+        public float scaleWidth;
+        public float scaleHeight;
         public Tangent(Vector3 position, Vector3 direction, float relPos = 0) {
             this.position = position;
             this.direction = direction;

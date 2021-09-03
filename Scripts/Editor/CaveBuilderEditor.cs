@@ -10,7 +10,7 @@ namespace ProceduralStructures {
             DrawDefaultInspector();
             if (GUILayout.Button("Update")) {
                 if (caveBuilder.generatedMeshParent == null) {
-                    GameObject go = new GameObject();
+                    GameObject go = new GameObject("generatedMesh");
                     go.transform.parent = caveBuilder.gameObject.transform;
                     go.transform.localPosition = Vector3.zero;
                     go.transform.localRotation = Quaternion.identity;

@@ -5,12 +5,11 @@ using UnityEngine;
 namespace ProceduralStructures {
     [Serializable]
     public class CaveDefinition {
-
         public enum Shape { Tunnel, O_Shaped }
         [Tooltip("number of times interpolated vertices are added")]
         [Range(0,5)]
         public int shapeSmoothing;
-        public List<Vector3> wayPoints;
+        public List<WayPointList> wayPointLists;
         [Tooltip("Shape of the cave")]
         public Shape crosscutShape;
         [Tooltip("unscaled height of the cave")]
@@ -27,11 +26,11 @@ namespace ProceduralStructures {
         private BezierSpline spline;
 
         public bool IsValid() {
-            return wayPoints != null && wayPoints.Count >= 2;
+            return wayPointLists != null && wayPointLists.Count > 0 && wayPointLists[0].Count >= 2;
         }
 
-        public IEnumerable<Vector3> GetVertices() {
-            spline = new BezierSpline(wayPoints);
+        public IEnumerable<Vector3> GetVertices(WayPointList list) {
+            spline = new BezierSpline(list.wayPoints);
             float t = 0;
             if (uResolution < 0.1f) uResolution = 0.1f;
             float stepSize = uResolution / spline.EstimatedLength;
@@ -42,8 +41,8 @@ namespace ProceduralStructures {
             }
         }
 
-        public IEnumerable<Tangent> GetTangents() {
-            spline = new BezierSpline(wayPoints);
+        public IEnumerable<Tangent> GetTangents(WayPointList list) {
+            spline = new BezierSpline(list.wayPoints);
             float t = 0;
             if (uResolution < 0.1f) uResolution = 0.1f;
             float stepSize = uResolution / spline.EstimatedLength;

@@ -16,24 +16,33 @@ namespace ProceduralStructures {
         }
 
         public void UpdateWayPoints() {
-            List<Vector3> points = new List<Vector3>();
+            List<WayPointList> lists = new List<WayPointList>();
             for (int i = 0; i < wayPointTransforms.childCount; i++) {
-                Vector3 v = wayPointTransforms.GetChild(i).position;
-                points.Add(v);
+                List<WayPoint> points = new List<WayPoint>();
+                Transform tunnel = wayPointTransforms.GetChild(i);
+                for (int j = 0; j < tunnel.childCount; j++) {
+                    Transform tf = tunnel.GetChild(j);
+                    WayPoint wp = new WayPoint(tf.position, tf.localScale.x, tf.localScale.y);
+                    wp.name = tf.gameObject.name;
+                    points.Add(wp);
+                }
+                lists.Add(new WayPointList(tunnel.gameObject.name, points));
             }
-            caveDefinition.wayPoints = points;
+            caveDefinition.wayPointLists = lists;
         }
 
         public void OnDrawGizmosSelected() {
             if (caveDefinition.IsValid()) {
-                Vector3 a = caveDefinition.wayPoints[0];
-                int n = 0;
-                Gizmos.color = Color.yellow;
-                foreach (Vector3 v in caveDefinition.GetVertices()) {
-                    n++;
-                    Gizmos.DrawLine(a, v);
-                    Gizmos.DrawSphere(v, 0.1f);
-                    a = v;
+                foreach (WayPointList list in caveDefinition.wayPointLists) {
+                    Vector3 a = list.wayPoints[0].position;
+                    int n = 0;
+                    Gizmos.color = Color.yellow;
+                    foreach (Vector3 v in caveDefinition.GetVertices(list)) {
+                        n++;
+                        Gizmos.DrawLine(a, v);
+                        Gizmos.DrawSphere(v, 0.1f);
+                        a = v;
+                    }
                 }
             }
         }
