@@ -20,6 +20,12 @@ namespace ProceduralStructures {
             }
         }
 
+        public float area {
+            get {
+                return Vector3.Cross(v1.pos-v0.pos, v2.pos-v0.pos).magnitude/2;
+            }
+        }
+        
         public Triangle(Vertex v0, Vertex v1, Vertex v2) {
             this.v0 = v0;
             this.v1 = v1;

@@ -1,5 +1,6 @@
 using System.Collections.Generic;
 using UnityEngine;
+using ExtensionMethods;
 
 namespace ProceduralStructures {
     public class MeshObject {
@@ -9,8 +10,21 @@ namespace ProceduralStructures {
         protected List<Vertex> vertices = new List<Vertex>();
         protected List<Triangle> triangles = new List<Triangle>();
         public float uvScale;
+        public float area {
+            get {
+                float a = 0;
+                foreach (Triangle triangle in triangles) {
+                    a += triangle.area;
+                }
+                return a;
+            }
+        }
 
         public virtual int Add(Vector3 pos) {
+            return InternalAdd(pos);
+        }
+
+        protected int InternalAdd(Vector3 pos) {
             int idx = vertices.FindIndex((v) => (SameInTolerance(v.pos,pos)));
             if (idx >= 0) return idx;
             vertices.Add(new Vertex(pos));
@@ -54,12 +68,40 @@ namespace ProceduralStructures {
         }
 
         public int[] SplitTriangle(Triangle triangle, Vertex v3) {
-            triangles.Remove(triangle);
+            if (!triangles.Remove(triangle)) {
+                Debug.LogWarning("Could not remove " + triangle + ".");
+            }
+            triangle.RemoveTriangleLinks();
             int[] indices = new int[3];
-            indices[0] = AddTriangle(triangle.v0, v3, triangle.v2);
-            indices[1] = AddTriangle(triangle.v2, v3, triangle.v1);
-            indices[2] = AddTriangle(triangle.v1, v3, triangle.v0);
+            indices[0] = AddTriangle(triangle.v0, triangle.v1, v3);
+            indices[1] = AddTriangle(triangle.v1, triangle.v2, v3);
+            indices[2] = AddTriangle(triangle.v2, triangle.v0, v3);
+            Debug.Log("Created " + triangles[indices[0]] + " and " + triangles[indices[1]] + " and " + triangles[indices[2]] + " from " + triangle);
             return indices;
+        }
+
+        public void SplitBigTriangles(float maxRelativeSize, float offset) {
+            float totalArea = area;
+            Vector3 center = GetCenter();
+            List<Triangle> trianglesToSplit = new List<Triangle>();
+            do {
+                foreach (Triangle triangle in triangles) {
+                    if (triangle.area / totalArea > maxRelativeSize) {
+                        trianglesToSplit.Add(triangle);
+                    }
+                }
+                if (trianglesToSplit.Count > 0) {
+                    foreach (Triangle triangle in trianglesToSplit) {
+                        int vIdx = InternalAdd(triangle.center + (triangle.center - center).normalized * offset);
+                        if (vIdx != vertices.Count-1) {
+                            Debug.LogWarning("the vertex is reused.");
+                        }
+                        Vertex n = vertices[vIdx];
+                        SplitTriangle(triangle, n);
+                    }
+                    trianglesToSplit.Clear();
+                }
+            } while (trianglesToSplit.Count > 0);
         }
 
         public List<Triangle> GetNeighbors(Triangle triangle) {

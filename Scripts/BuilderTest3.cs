@@ -9,6 +9,9 @@ public class BuilderTest3 : MonoBehaviour
     public GameObject target;
     public Material material;
     public float uvScale;
+    public bool splitBigTriangles = false;
+    public float maxRelativeSize = 0.2f;
+    public float offset = 0.1f;
 
     private int prevChildren = 0;
     private ConvexBody body;
@@ -39,6 +42,9 @@ public class BuilderTest3 : MonoBehaviour
                     body.Add(transform.GetChild(i).position);
                 }
             } else break;
+        }
+        if (splitBigTriangles) {
+            body.SplitBigTriangles(maxRelativeSize, offset);
         }
         body.Build(target, material);
     }
