@@ -9,6 +9,16 @@ namespace ProceduralStructures {
         public List<Face> faces = new List<Face>();
         public Material material;
 
+        public bool isEmpty {
+            get { return faces.Count == 0; }
+        }
+
+        public void Clear() {
+            faces.Clear();
+            position = Vector3.zero;
+            rotation = Quaternion.identity;
+        }
+
         public BuildingObject ResetTransform() {
             foreach (Face face in faces) {
                 face.Rotate(Quaternion.Inverse(rotation)).MoveFaceBy(-position);
@@ -150,9 +160,30 @@ namespace ProceduralStructures {
             return this;
         }
 
+        public List<Vector3> GetAllVertices() {
+            List<Vector3> result = new List<Vector3>();
+            foreach (Face face in faces) {
+                result.AddRange(face.GetVerticesList());
+            }
+            return result;
+        }
+
         public BuildingObject InvertNormals() {
             foreach (Face face in faces) {
                 face.InvertNormals();
+            }
+            return this;
+        }
+
+        public BuildingObject SplitFace(Face face, Vector3 newVertex) {
+            faces.Remove(face);
+            faces.Add(new Face(face.a, face.b, newVertex));
+            faces.Add(new Face(face.b, face.c, newVertex));
+            if (face.isTriangle) {
+                faces.Add(new Face(face.c, face.a, newVertex));
+            } else {
+                faces.Add(new Face(face.c, face.d, newVertex));
+                faces.Add(new Face(face.d, face.a, newVertex));
             }
             return this;
         }

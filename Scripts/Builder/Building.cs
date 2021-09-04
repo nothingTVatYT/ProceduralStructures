@@ -69,7 +69,7 @@ namespace ProceduralStructures {
             }
         }
 
-        protected void AddMesh(GameObject target, Mesh mesh, Material material) {
+        public void AddMesh(GameObject target, Mesh mesh, Material material) {
             GameObject childByMaterial = null;
             foreach (Transform t in target.transform) {
                 if (t.gameObject.name == "mat-"+material.name) {

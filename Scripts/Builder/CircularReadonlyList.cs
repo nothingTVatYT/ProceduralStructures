@@ -11,6 +11,10 @@ namespace ProceduralStructures {
             data = orig;
         }
 
+        public CircularReadonlyList(params T[] t) {
+            data = new List<T>(t);
+        }
+
         new public T this[int index] { get {
             int clippedIndex = index % data.Count;
             if (clippedIndex < 0) clippedIndex += data.Count;
