@@ -101,6 +101,12 @@ namespace ProceduralStructures {
             }
         }
 
+        public void RandomizeVertices(Vector3 displacement) {
+            foreach (Vertex vertex in vertices) {
+                vertex.pos = vertex.pos + displacement * (Random.value - 0.5f);
+            }
+        }
+
         public void SetUVCylinderProjection(IEnumerable<int> triangleIndices, Vector3 center, Vector3 direction, float uOffset, float uvScale) {
             foreach (int ti in triangleIndices) {
                 Triangle triangle = triangles[ti];

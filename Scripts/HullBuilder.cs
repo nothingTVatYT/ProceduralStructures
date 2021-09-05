@@ -13,6 +13,9 @@ public class HullBuilder : MonoBehaviour {
     public float uvScale = 1;
     public MeshObject.Shading shading = MeshObject.Shading.Flat;
 
+    public bool randomizeVertices = false;
+    public Vector3 randomDisplacement;
+
     void Start()
     {
         
@@ -54,6 +57,9 @@ public class HullBuilder : MonoBehaviour {
             } else {
                 body.AddPoint(tf.position);
             }
+        }
+        if (randomizeVertices) {
+            body.RandomizeVertices(randomDisplacement);
         }
         if (flipNormals) {
             body.FlipNormals();

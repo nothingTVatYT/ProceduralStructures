@@ -261,7 +261,10 @@ namespace ProceduralStructures {
                 int[] fanTriangles = cavemesh.CreateTriangleFan(previousEdgeLoop);
                 cavemesh.SetUVBoxProjection(fanTriangles, cave.uvScale);
             }
-            cavemesh.shading = MeshObject.Shading.Smooth;
+            if (cave.randomizeVertices) {
+                cavemesh.RandomizeVertices(cave.randomDisplacement);
+            }
+            cavemesh.shading = cave.shading;
             cavemesh.Build(target, cave.material);
         }
 

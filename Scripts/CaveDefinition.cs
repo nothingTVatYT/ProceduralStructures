@@ -9,6 +9,7 @@ namespace ProceduralStructures {
         [Tooltip("number of times interpolated vertices are added")]
         [Range(0,5)]
         public int shapeSmoothing;
+        public MeshObject.Shading shading = MeshObject.Shading.Auto;
         public List<WayPointList> wayPointLists;
         [Tooltip("Shape of the cave")]
         public Shape crosscutShape;
@@ -22,6 +23,8 @@ namespace ProceduralStructures {
         public Material material;
         public float uvScale;
         public bool closeEnds;
+        public bool randomizeVertices;
+        public Vector3 randomDisplacement;
 
         private BezierSpline spline;
 
