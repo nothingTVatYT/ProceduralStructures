@@ -33,12 +33,51 @@ namespace ProceduralStructures {
             return vertices.Count - 1;
         }
 
+        public virtual List<Vertex> AddRange(IEnumerable<Vector3> points) {
+            List<int> result = new List<int>();
+            foreach (Vector3 v in points) {
+                int i = Add(v);
+                if (!result.Contains(i)) {
+                    result.Add(i);
+                }
+            }
+            return VertexList(result);
+        }
+
+        public List<Vertex> VertexList(List<int> l) {
+            List<Vertex> result = new List<Vertex>(l.Count);
+            foreach (int i in l) {
+                result.Add(vertices[i]);
+            }
+            return result;
+        }
+
+        public List<Triangle> TriangleList(IEnumerable<int> l) {
+            List<Triangle> result = new List<Triangle>();
+            foreach (int i in l) {
+                result.Add(triangles[i]);
+            }
+            return result;
+        }
+
         public int AddTriangle(Vertex v0, Vertex v1, Vertex v2) {
             Triangle triangle = new Triangle(v0, v1, v2);
             triangles.Add(triangle);
             // for visualizing only
             triangle.SetUVProjected(uvScale);
             return triangles.Count-1;
+        }
+
+        public void AddObject(MeshObject other) {
+            foreach (Triangle t in other.triangles) {
+                Vertex v0 = vertices[InternalAdd(t.v0.pos)];
+                Vertex v1 = vertices[InternalAdd(t.v1.pos)];
+                Vertex v2 = vertices[InternalAdd(t.v2.pos)];
+                Triangle nt = triangles[AddTriangle(v0, v1, v2)];
+                nt.uv0 = t.uv0;
+                nt.uv1 = t.uv1;
+                nt.uv2 = t.uv2;
+            }
         }
 
         public int GetTriangleHit(Vector3 origin, Vector3 direction) {
@@ -49,6 +88,47 @@ namespace ProceduralStructures {
                 }
             }
             return -1;
+        }
+
+        public void ScaleVertices(List<Vertex> list, Vector3 scale) {
+            foreach (Vertex v in list) {
+                v.pos = Vector3.Scale(v.pos, scale);
+            }
+        }
+
+        public void SetUVCylinderProjection(IEnumerable<int> triangleIndices, Vector3 center, Vector3 direction, float uOffset, float uvScale) {
+            foreach (int ti in triangleIndices) {
+                Triangle triangle = triangles[ti];
+                triangle.SetUVCylinderProjection(center, direction, uOffset, uvScale);
+            }
+        }
+
+        public void ClampToPlane(List<Vertex> front, List<Vertex> back, Vector3 plane, Vector3 normal) {
+            for (int i = 0; i < front.Count; i++) {
+                // if vertex is behind the plane (not on normal side) project it on the plane
+                float dot = Vector3.Dot(front[i].pos - plane, normal);
+                if (dot < 0) {
+                    Vector3 v = front[i].pos - plane;
+                    float dist = v.x*normal.x + v.y*normal.y + v.z*normal.z;
+                    Vector3 projected = front[i].pos - dist*normal;
+                    // collapse front and back vertices
+                    front[i].pos = projected;
+                    back[i].pos = projected;
+                }
+            }
+        }
+
+        public int[] CreateTriangleFan(List<Vertex> l) {
+            Vector3 centroid = GetCenter(l);
+            Vertex fanCenter = vertices[InternalAdd(centroid)];
+            List<int> result = new List<int>();
+            if (l.Count >= 3) {
+                for (int i = 0; i < l.Count; i++) {
+                    int j = i < l.Count-1 ? i+1 : 0;
+                    result.Add(AddTriangle(fanCenter, l[i], l[j]));
+                }
+            }
+            return result.ToArray();
         }
 
         public bool IsBehind(Triangle triangle, Vector3 point) {
@@ -106,6 +186,18 @@ namespace ProceduralStructures {
             } while (trianglesToSplit.Count > 0);
         }
 
+        public int[] BridgeEdgeLoops(List<Vertex> fromVertices, List<Vertex> toVertices, float uvScale = 1f) {
+            List<int> indices = new List<int>();
+            CircularReadonlyList<Vertex> fromRing = new CircularReadonlyList<Vertex>(fromVertices);
+            CircularReadonlyList<Vertex> toRing = new CircularReadonlyList<Vertex>(toVertices);
+            List<Face> faces = new List<Face>();
+            for (int i = 0; i < fromRing.Count; i++) {
+                indices.Add(AddTriangle(fromRing[i], fromRing[i+1], toRing[i+1]));
+                indices.Add(AddTriangle(fromRing[i], toRing[i+1], toRing[i]));
+            }
+            return indices.ToArray();
+        }
+
         public List<Triangle> GetNeighbors(Triangle triangle) {
             List<Triangle> result = new List<Triangle>();
             foreach (Vertex vertex in triangle.GetVertices()) {
@@ -131,15 +223,35 @@ namespace ProceduralStructures {
             return sum / vertices.Count;
         }
 
+        public Vector3 GetCenter(List<Vertex> l) {
+            Vector3 sum = Vector3.zero;
+            foreach (Vertex vertex in l) {
+                sum += vertex.pos;
+            }
+            return sum / l.Count;
+        }
+
         public void FlipNormals() {
             foreach (Triangle triangle in triangles) {
                 triangle.FlipNormal();
             }
         }
 
+        public void FlipNormals(IEnumerable<int> l) {
+            foreach (int i in l) {
+                triangles[i].FlipNormal();
+            }
+        }
+
         public void SetUVBoxProjection(float uvScale) {
             foreach (Triangle triangle in triangles) {
                 triangle.SetUVProjected(uvScale);
+            }
+        }
+
+        public void SetUVBoxProjection(IEnumerable<int> l, float uvScale) {
+            foreach (int i in l) {
+                triangles[i].SetUVProjected(uvScale);
             }
         }
 

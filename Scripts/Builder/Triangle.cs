@@ -87,6 +87,21 @@ namespace ProceduralStructures {
             uv2 = new Vector2((dlr*c.z + dfb*c.x + dud*c.x) * uvScale, (dlr*c.y + dfb*c.y + dud*c.z) * uvScale);
         }
 
+        public Triangle SetUVCylinderProjection(Vector3 center, Vector3 direction, float uOffset, float uvScale) {
+            uv0 = UVCylinderProjection(v0.pos, center, direction, uOffset, uvScale);
+            uv1 = UVCylinderProjection(v1.pos, center, direction, uOffset, uvScale);
+            uv2 = UVCylinderProjection(v2.pos, center, direction, uOffset, uvScale);
+            return this;
+        }
+
+        private static Vector2 UVCylinderProjection(Vector3 vertex, Vector3 center, Vector3 direction, float uOffset, float uvScale) {
+            float dot = Vector3.Dot(vertex - center, direction);
+            Vector3 ms = center + dot*direction;
+            // this should be replaced with a v scale setting
+            float r = 5;
+            return new Vector2((dot+uOffset) * uvScale, Vector3.Angle(vertex - ms, Vector3.down) / 180f * r * uvScale);
+        }
+
         public override string ToString()
         {
             return "T[" + v0 + "," + v1 + "," + v2 + "]";

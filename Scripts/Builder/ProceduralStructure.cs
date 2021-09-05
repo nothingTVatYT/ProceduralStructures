@@ -194,9 +194,7 @@ namespace ProceduralStructures {
         }
 
         public void RebuildCave(CaveDefinition cave, WayPointList tunnel, GameObject target) {
-            Building building = new Building();
-            BuildingObject cavemesh = new BuildingObject();
-            cavemesh.material = cave.material;
+            MeshObject cavemesh = new MeshObject();
             // construct the shape
             List<Vector3> shapeEdgeList = new List<Vector3>();
             switch (cave.crosscutShape) {
@@ -211,8 +209,7 @@ namespace ProceduralStructures {
             for(int i = 0; i < cave.shapeSmoothing; i++) {
                 shapeEdgeList = SmoothVertices(shapeEdgeList);
             }
-            List<Vector3> previousEdgeLoop = null;
-            List<Face> previousAddedFaces = null;
+            List<Vertex> previousEdgeLoop = null;
             Vector3 previousPosition = Vector3.zero;
             Vector3 previousDirection = Vector3.zero;
             int idx = 0;
@@ -221,8 +218,8 @@ namespace ProceduralStructures {
                 Vector3 localPos = tangent.position - target.transform.position;
                 Quaternion localRotation = Quaternion.LookRotation(tangent.direction, Vector3.up);
                 Vector3 localScale = new Vector3(tangent.scaleWidth, tangent.scaleHeight, 1f);
-                List<Vector3> currentEdgeLoop = Builder.MoveVertices(Builder.RotateVertices(
-                    Builder.ScaleVertices(shapeEdgeList, localScale), localRotation), localPos);
+                List<Vertex> currentEdgeLoop = cavemesh.AddRange(Builder.MoveVertices(Builder.RotateVertices(
+                    Builder.ScaleVertices(shapeEdgeList, localScale), localRotation), localPos));
                 if (previousEdgeLoop != null) {
                     // only add it if there is no overlap
                     Vector3 right = Vector3.Cross(tangent.direction, Vector3.up);
@@ -238,25 +235,21 @@ namespace ProceduralStructures {
                         //Debug.LogFormat("plane({0},{1}), current {2}, previous {3}", plane, planeNormal, currentEdgeLoop.Elements(), previousEdgeLoop.Elements());
                         cavemesh.ClampToPlane(currentEdgeLoop, previousEdgeLoop, plane, planeNormal);
                     }
-                    List<Face> generatedFaces = Builder.BridgeEdgeLoopsPrepared(previousEdgeLoop, currentEdgeLoop, cave.uvScale);
+                    int[] generatedTriangles = cavemesh.BridgeEdgeLoops(previousEdgeLoop, currentEdgeLoop, cave.uvScale);
                     //Builder.SetUVCylinderProjection(generatedFaces, plane + Vector3.up * cave.baseHeight/2, planeNormal, uOffset, cave.uvScale);
-                    Vector3 cylinderCenter = (Builder.FindCentroid(currentEdgeLoop) + Builder.FindCentroid(previousEdgeLoop))/2;
-                    Builder.SetUVCylinderProjection(generatedFaces, cylinderCenter, planeNormal, uOffset, cave.uvScale);
-                    cavemesh.AddFaces(generatedFaces);
+                    Vector3 cylinderCenter = (cavemesh.GetCenter(currentEdgeLoop) + cavemesh.GetCenter(previousEdgeLoop))/2;
+                    cavemesh.SetUVCylinderProjection(generatedTriangles, cylinderCenter, planeNormal, uOffset, cave.uvScale);
                     previousPosition = localPos;
                     previousDirection = tangent.direction;
-                    previousAddedFaces = generatedFaces;
                     previousEdgeLoop = currentEdgeLoop;
                 } else {
                     // this is the first crosscut
                     previousPosition = localPos;
                     previousDirection = tangent.direction;
                     if (cave.closeEnds) {
-                        BuildingObject frontFace = new BuildingObject();
-                        frontFace.AddFaces(Face.PolygonToTriangleFan(currentEdgeLoop));
-                        frontFace.InvertNormals();
-                        frontFace.SetUVBoxProjection(cave.uvScale);
-                        cavemesh.AddObject(frontFace);
+                        int[] fanTriangles = cavemesh.CreateTriangleFan(currentEdgeLoop);
+                        cavemesh.FlipNormals(fanTriangles);
+                        cavemesh.SetUVBoxProjection(fanTriangles, cave.uvScale);
                     }
                     previousEdgeLoop = currentEdgeLoop;
                 }
@@ -265,14 +258,11 @@ namespace ProceduralStructures {
             }
             // this is the last crosscut
             if (cave.closeEnds && previousEdgeLoop != null) {
-                BuildingObject frontFace = new BuildingObject();
-                frontFace.AddFaces(Face.PolygonToTriangleFan(previousEdgeLoop));
-                frontFace.SetUVBoxProjection(cave.uvScale);
-                cavemesh.AddObject(frontFace);
+                int[] fanTriangles = cavemesh.CreateTriangleFan(previousEdgeLoop);
+                cavemesh.SetUVBoxProjection(fanTriangles, cave.uvScale);
             }
-            //cavemesh.SetUVBoxProjection(cave.uvScale);
-            building.AddObject(cavemesh);
-            building.Build(target, 0);
+            cavemesh.shading = MeshObject.Shading.Smooth;
+            cavemesh.Build(target, cave.material);
         }
 
         public List<Vector3> SmoothVertices(List<Vector3> l) {
