@@ -7,8 +7,8 @@ namespace ProceduralStructures {
 
         private Vector3 center;
 
-        public override int Add(Vector3 vertex) {
-            int vIdx = base.Add(vertex);
+        public int AddPoint(Vector3 vertex) {
+            int vIdx = AddUnique(vertex);
             if (vertices.Count == 3 && triangles.Count == 0) {
                 AddTriangle(vertices[0], vertices[1], vertices[2]);
             } else if (vertices.Count == 4 && triangles.Count == 1) {

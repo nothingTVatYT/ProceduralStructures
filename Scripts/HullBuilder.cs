@@ -37,7 +37,7 @@ public class HullBuilder : MonoBehaviour {
                 foreach (HouseBuilder houseBuilder in houseBuilders) {
                     if (!ignoreInactive || houseBuilder.gameObject.activeInHierarchy) {
                         foreach (Vector3 v in GetCorners(houseBuilder.calculateCenter(), houseBuilder.calculateSize())) {
-                            body.Add(transform.InverseTransformPoint(houseBuilder.transform.TransformPoint(v)));
+                            body.AddPoint(transform.InverseTransformPoint(houseBuilder.transform.TransformPoint(v)));
                         }
                     }
                 }
@@ -47,12 +47,12 @@ public class HullBuilder : MonoBehaviour {
                 foreach (BoxCollider boxCollider in boxColliders) {
                     if (!ignoreInactive || boxCollider.gameObject.activeInHierarchy) {
                         foreach (Vector3 v in GetCorners(boxCollider.center, boxCollider.size)) {
-                            body.Add(transform.InverseTransformPoint(boxCollider.transform.TransformPoint(v)));
+                            body.AddPoint(transform.InverseTransformPoint(boxCollider.transform.TransformPoint(v)));
                         }
                     }
                 }
             } else {
-                body.Add(tf.position);
+                body.AddPoint(tf.position);
             }
         }
         if (flipNormals) {

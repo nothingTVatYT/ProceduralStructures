@@ -23,12 +23,17 @@ namespace ProceduralStructures {
         }
 
         public virtual int Add(Vector3 pos) {
-            return InternalAdd(pos);
+            return AddUnique(pos);
         }
 
-        protected int InternalAdd(Vector3 pos) {
+        protected int AddUnique(Vector3 pos) {
             int idx = vertices.FindIndex((v) => (SameInTolerance(v.pos,pos)));
             if (idx >= 0) return idx;
+            vertices.Add(new Vertex(pos));
+            return vertices.Count - 1;
+        }
+
+        protected int AddUnchecked(Vector3 pos) {
             vertices.Add(new Vertex(pos));
             return vertices.Count - 1;
         }
@@ -70,9 +75,9 @@ namespace ProceduralStructures {
 
         public void AddObject(MeshObject other) {
             foreach (Triangle t in other.triangles) {
-                Vertex v0 = vertices[InternalAdd(t.v0.pos)];
-                Vertex v1 = vertices[InternalAdd(t.v1.pos)];
-                Vertex v2 = vertices[InternalAdd(t.v2.pos)];
+                Vertex v0 = vertices[AddUnique(t.v0.pos)];
+                Vertex v1 = vertices[AddUnique(t.v1.pos)];
+                Vertex v2 = vertices[AddUnique(t.v2.pos)];
                 Triangle nt = triangles[AddTriangle(v0, v1, v2)];
                 nt.uv0 = t.uv0;
                 nt.uv1 = t.uv1;
@@ -120,7 +125,7 @@ namespace ProceduralStructures {
 
         public int[] CreateTriangleFan(List<Vertex> l) {
             Vector3 centroid = GetCenter(l);
-            Vertex fanCenter = vertices[InternalAdd(centroid)];
+            Vertex fanCenter = vertices[AddUnique(centroid)];
             List<int> result = new List<int>();
             if (l.Count >= 3) {
                 for (int i = 0; i < l.Count; i++) {
@@ -174,7 +179,7 @@ namespace ProceduralStructures {
                 }
                 if (trianglesToSplit.Count > 0) {
                     foreach (Triangle triangle in trianglesToSplit) {
-                        int vIdx = InternalAdd(triangle.center + (triangle.center - center).normalized * offset);
+                        int vIdx = Add(triangle.center + (triangle.center - center).normalized * offset);
                         if (vIdx != vertices.Count-1) {
                             Debug.LogWarning("the vertex is reused.");
                         }
