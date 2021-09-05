@@ -46,11 +46,11 @@ namespace ProceduralStructures {
         }
 
         public bool FacesPoint(Vector3 point) {
-            return Vector3.Dot(normal, point-v0.pos) > Face.Epsilon;
+            return Vector3.Dot(normal, point-v0.pos) > 0; //Face.Epsilon;
         }
 
         public static bool FacesPoint(Vector3 v0, Vector3 v1, Vector3 v2, Vector3 point) {
-            return Vector3.Dot(Vector3.Cross(v1-v0, v2-v0), point-v0) > 0;
+            return Vector3.Dot(Vector3.Cross(v1-v0, v2-v0), point-v0) > 0; //Face.Epsilon;
         }
 
         public bool SharesEdgeWith(Triangle other) {

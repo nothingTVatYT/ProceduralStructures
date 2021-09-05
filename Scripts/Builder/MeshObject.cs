@@ -5,11 +5,13 @@ using ExtensionMethods;
 namespace ProceduralStructures {
     public class MeshObject {
 
+        public enum Shading { Flat, Smooth, Auto }
         private static float Epsilon = 1e-3f;
         private static float EpsilonSquared = Epsilon*Epsilon;
         protected List<Vertex> vertices = new List<Vertex>();
         protected List<Triangle> triangles = new List<Triangle>();
         public float uvScale;
+        public Shading shading = Shading.Flat;
         public float area {
             get {
                 float a = 0;
@@ -129,6 +131,18 @@ namespace ProceduralStructures {
             return sum / vertices.Count;
         }
 
+        public void FlipNormals() {
+            foreach (Triangle triangle in triangles) {
+                triangle.FlipNormal();
+            }
+        }
+
+        public void SetUVBoxProjection(float uvScale) {
+            foreach (Triangle triangle in triangles) {
+                triangle.SetUVProjected(uvScale);
+            }
+        }
+
         protected Mesh BuildMesh() {
             Mesh mesh = new Mesh();
             int uniqueVertices = 0;
@@ -147,17 +161,17 @@ namespace ProceduralStructures {
                 verts[vertIndex] = triangle.v0.pos;
                 uv[vertIndex] = triangle.uv0;
                 tris[trisIndex++] = vertIndex;
-                normals[vertIndex] = n;
+                normals[vertIndex] = CalculateNormal(triangle.v0, triangle);
                 vertIndex++;
                 verts[vertIndex] = triangle.v1.pos;
                 uv[vertIndex] = triangle.uv1;
                 tris[trisIndex++] = vertIndex;
-                normals[vertIndex] = n;
+                normals[vertIndex] = CalculateNormal(triangle.v1, triangle);
                 vertIndex++;
                 verts[vertIndex] = triangle.v2.pos;
                 uv[vertIndex] = triangle.uv2;
                 tris[trisIndex++] = vertIndex;
-                normals[vertIndex] = n;
+                normals[vertIndex] = CalculateNormal(triangle.v2, triangle);
                 vertIndex++;
             }
             
@@ -169,6 +183,33 @@ namespace ProceduralStructures {
             return mesh;
         }
 
+        Vector3 CalculateNormal(Vertex v, Triangle triangle) {
+            Vector3 n = Vector3.zero;
+            int ct = 0;
+            switch (shading) {
+                case Shading.Flat:
+                    n = triangle.normal;
+                    break;
+                case Shading.Smooth:
+                    foreach (Triangle t in v.triangles) {
+                        n += t.normal;
+                    }
+                    n /= v.triangles.Count;
+                    break;
+                case Shading.Auto:
+                    n = triangle.normal;
+                    ct = 1;
+                    foreach (Triangle t in v.triangles) {
+                        if (t != triangle && Vector3.Angle(triangle.normal, t.normal) < 60f) {
+                            n += t.normal;
+                            ct++;
+                        }
+                    }
+                    n /= ct;
+                    break;
+            }
+            return n;
+        }
         public void Build(GameObject target, Material material) {
                         GameObject childByMaterial = null;
             foreach (Transform t in target.transform) {

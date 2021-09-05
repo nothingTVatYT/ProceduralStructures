@@ -20,44 +20,43 @@ namespace ProceduralStructures {
                 Vertex addedVertex = vertices[vIdx];
                 List<Triangle> facingPoint = triangles.FindAll((t) => t.FacesPoint(vertex));
                 if (facingPoint.Count > 0) {
-                triangles.RemoveAll(t => facingPoint.Contains(t));
-                facingPoint.ForEach(t => t.RemoveTriangleLinks());
-                List<Vertex> boundaryVertices = new List<Vertex>();
-                List<Vertex> duplicates = new List<Vertex>();
-                foreach (Triangle triangle in facingPoint) {
-                    foreach (Vertex v in triangle.GetVertices()) {
-                        if (v.triangles.FindAll(t => !facingPoint.Contains(t)).Count > 0) {
-                            boundaryVertices.Add(v);
+                    triangles.RemoveAll(t => facingPoint.Contains(t));
+                    facingPoint.ForEach(t => t.RemoveTriangleLinks());
+                    List<Vertex> boundaryVertices = new List<Vertex>();
+                    foreach (Triangle triangle in facingPoint) {
+                        foreach (Vertex v in triangle.GetVertices()) {
+                            if (v.triangles.FindAll(t => !facingPoint.Contains(t)).Count > 0) {
+                                boundaryVertices.Add(v);
+                            }
                         }
                     }
-                }
-                Vertex v0 = boundaryVertices[0];
-                Vertex vBegin = v0;
-                do {
-                    int c = boundaryVertices.Count;
-                    for (int i = 0; i < boundaryVertices.Count; i++) {
-                        Vertex v1 = boundaryVertices[i];
-                        if (v0 != v1) {
-                            bool invalid = false;
-                            for (int j = 0; j < boundaryVertices.Count; j++) {
-                                Vertex v2 = boundaryVertices[j];
-                                if (v2 != v0 && v2 != v1) {
-                                    if (Triangle.FacesPoint(vertex, v0.pos, v1.pos, v2.pos)) {
-                                        invalid = true;
-                                        break;
+                    Vertex v0 = boundaryVertices[0];
+                    Vertex vBegin = v0;
+                    do {
+                        int c = boundaryVertices.Count;
+                        for (int i = 0; i < boundaryVertices.Count; i++) {
+                            Vertex v1 = boundaryVertices[i];
+                            if (v0 != v1) {
+                                bool invalid = false;
+                                for (int j = 0; j < boundaryVertices.Count; j++) {
+                                    Vertex v2 = boundaryVertices[j];
+                                    if (v2 != v0 && v2 != v1) {
+                                        if (Triangle.FacesPoint(vertex, v0.pos, v1.pos, v2.pos)) {
+                                            invalid = true;
+                                            break;
+                                        }
                                     }
                                 }
-                            }
-                            if (!invalid) {
-                                Triangle t = new Triangle(addedVertex, v0, v1);
-                                t.SetUVProjected(uvScale);
-                                triangles.Add(t);
-                                v0 = v1;
-                                break;
+                                if (!invalid) {
+                                    Triangle t = new Triangle(addedVertex, v0, v1);
+                                    t.SetUVProjected(uvScale);
+                                    triangles.Add(t);
+                                    v0 = v1;
+                                    break;
+                                }
                             }
                         }
-                    }
-                } while (v0 != vBegin);
+                    } while (v0 != vBegin);
                 }
             }
             center = GetCenter();
