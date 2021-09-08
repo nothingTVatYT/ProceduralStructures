@@ -144,9 +144,13 @@ namespace ProceduralStructures {
         private static Vector2 UVCylinderProjection(Vector3 vertex, Vector3 center, Vector3 direction, float uOffset, float uvScale) {
             float dot = Vector3.Dot(vertex - center, direction);
             Vector3 ms = center + dot*direction;
+            Vector3 down = Vector3.down + Vector3.Cross(direction, Vector3.up)*0.05f;
             // this should be replaced with a v scale setting
             float r = 5;
-            return new Vector2((dot+uOffset) * uvScale, Vector3.Angle(vertex - ms, Vector3.down) / 180f * r * uvScale);
+            float u = (dot+uOffset) * uvScale;
+            float v = Vector3.Angle(vertex - ms, down) / 180f * r * uvScale;
+            //float v = Mathf.Atan2((vertex-ms).y, (vertex-ms).x) / 180f * r * uvScale;
+            return new Vector2(u, v);
         }
 
         public bool RayHit(Vector3 origin, Vector3 direction, bool ignoreBack, out bool fromBack, out Vector3 intersection) {

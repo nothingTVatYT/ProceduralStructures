@@ -22,7 +22,8 @@ namespace ProceduralStructures {
         public float uResolution;
         public Material material;
         public float uvScale;
-        public bool closeEnds;
+        public bool closeBeginning;
+        public bool closeEnd;
         public bool randomizeVertices;
         public Vector3 randomDisplacement;
 

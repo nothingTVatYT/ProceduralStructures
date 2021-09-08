@@ -539,9 +539,12 @@ namespace ProceduralStructures {
             cutObject.CreateTriangleFan(toVertices);
             cutObject.FlipNormals(cutObject.CreateTriangleFan(fromVertices));
 
+            
             //cutObject.Build(other.targetGameObject, other.material);
             List<Vertex> outerVertices = RemoveEverythingInside(cutObject);
             int[] createdTriangles = FillPolygon(outerVertices, addedVertices);
+            newVertices.Reverse();
+            BridgeEdgeLoops(addedVertices, newVertices, uvScale);
         }
 
         public List<Vertex> RemoveEverythingInside(MeshObject other) {

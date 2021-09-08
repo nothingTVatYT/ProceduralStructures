@@ -261,7 +261,7 @@ namespace ProceduralStructures {
                     }
                     int[] generatedTriangles = cavemesh.BridgeEdgeLoops(previousEdgeLoop, currentEdgeLoop, cave.uvScale);
                     //Builder.SetUVCylinderProjection(generatedFaces, plane + Vector3.up * cave.baseHeight/2, planeNormal, uOffset, cave.uvScale);
-                    Vector3 cylinderCenter = (cavemesh.GetCenter(currentEdgeLoop) + cavemesh.GetCenter(previousEdgeLoop))/2;
+                    Vector3 cylinderCenter = cavemesh.GetCenter(currentEdgeLoop); //(cavemesh.GetCenter(currentEdgeLoop) + cavemesh.GetCenter(previousEdgeLoop))/2;
                     cavemesh.SetUVCylinderProjection(generatedTriangles, cylinderCenter, planeNormal, uOffset, cave.uvScale);
                     previousPosition = localPos;
                     previousDirection = tangent.direction;
@@ -270,7 +270,7 @@ namespace ProceduralStructures {
                     // this is the first crosscut
                     previousPosition = localPos;
                     previousDirection = tangent.direction;
-                    if (cave.closeEnds) {
+                    if (cave.closeBeginning) {
                         int[] fanTriangles = cavemesh.CreateTriangleFan(currentEdgeLoop);
                         cavemesh.FlipNormals(fanTriangles);
                         cavemesh.SetUVBoxProjection(fanTriangles, cave.uvScale);
@@ -281,7 +281,7 @@ namespace ProceduralStructures {
                 idx++;
             }
             // this is the last crosscut
-            if (cave.closeEnds && previousEdgeLoop != null) {
+            if (cave.closeEnd && previousEdgeLoop != null) {
                 int[] fanTriangles = cavemesh.CreateTriangleFan(previousEdgeLoop);
                 cavemesh.SetUVBoxProjection(fanTriangles, cave.uvScale);
             }
