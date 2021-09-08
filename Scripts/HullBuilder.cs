@@ -15,6 +15,11 @@ public class HullBuilder : MonoBehaviour {
 
     public bool randomizeVertices = false;
     public Vector3 randomDisplacement;
+    public CaveBuilderComponent connectedCave;
+    public bool decimateVertices = false;
+    public int maxVertices = 6;
+    public Material debugMaterial;
+
 
     void Start()
     {
@@ -33,6 +38,7 @@ public class HullBuilder : MonoBehaviour {
         }
         ConvexBody body = new ConvexBody();
         body.uvScale = uvScale;
+        body.transform = transform;
         for (int i = 0; i < wrappedObject.transform.childCount; i++) {
             Transform tf = wrappedObject.transform.GetChild(i);
             HouseBuilder[] houseBuilders = tf.gameObject.GetComponentsInChildren<HouseBuilder>();
@@ -61,6 +67,16 @@ public class HullBuilder : MonoBehaviour {
         if (randomizeVertices) {
             body.RandomizeVertices(randomDisplacement);
         }
+        if (connectedCave != null) {
+            MeshObject other = connectedCave.caveDefinition.GetConnection(connectedCave.gameObject.transform, 1, 0);
+            if (decimateVertices) {
+                other.Decimate(maxVertices);
+            }
+            other.targetGameObject = hullRoot;
+            other.material = debugMaterial;
+            body.AddConnector(other);
+        }
+
         if (flipNormals) {
             body.FlipNormals();
         }

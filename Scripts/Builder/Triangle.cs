@@ -4,6 +4,7 @@ using UnityEngine;
 namespace ProceduralStructures {
 
     public class Triangle {
+        public int id;
         public Vertex v0, v1, v2;
         public Vector2 uv0, uv1, uv2;
         public Vector3 normal {
@@ -33,6 +34,7 @@ namespace ProceduralStructures {
             this.v0.SetTriangle(this);
             this.v1.SetTriangle(this);
             this.v2.SetTriangle(this);
+            id = GetHashCode();
         }
 
         public void FlipNormal() {
@@ -45,6 +47,45 @@ namespace ProceduralStructures {
             return new Vertex[] { v0, v1, v2 };
         }
 
+        public bool PointIsAbove(Vector3 point) {
+            // barycentric coordinate check
+            // see https://gamedev.stackexchange.com/questions/28781/easy-way-to-project-point-onto-triangle-or-plane
+            Vector3 u = v1.pos-v0.pos;
+            Vector3 v = v2.pos-v0.pos;
+            Vector3 n = Vector3.Cross(u, v);
+            Vector3 w = point - v0.pos;
+            float gamma = Vector3.Dot(Vector3.Cross(u, w), n) / Vector3.Dot(n, n);
+            float beta = Vector3.Dot(Vector3.Cross(w, v), n) / Vector3.Dot(n, n);
+            float alpha = 1 - gamma - beta;
+            return ((0 <= alpha) && (alpha <= 1) &&
+                (0 <= beta)  && (beta  <= 1) &&
+                (0 <= gamma) && (gamma <= 1));
+        }
+
+        /// <summary>checks whether any vertex is contained by this triangle with a tolerance(+-) on the normal</summary>
+        public bool ContainsAnyVertex(IEnumerable<Vertex> other, float heightTolerance = 0.2f) {
+            Vector3 n = normal;
+            foreach (Vertex v in other) {
+                if (v0 == v || v1 == v || v2 == v) {
+                    continue;
+                }
+                if (Vector3.Dot(Vector3.Cross(n, v1.pos-v0.pos), v.pos-v0.pos) < 0) {
+                    continue;
+                }
+                if (Vector3.Dot(Vector3.Cross(n, v2.pos-v1.pos), v.pos-v1.pos) < 0) {
+                    continue;
+                }
+                if (Vector3.Dot(Vector3.Cross(n, v0.pos-v2.pos), v.pos-v2.pos) < 0) {
+                    continue;
+                }
+                if (Mathf.Abs(Vector3.Dot((v.pos-v0.pos), normal)) < heightTolerance) {
+                    return true;
+                }
+            }
+            return false;
+        }
+
+        /// <summary>checks whether the point is in the half space above this triangle</summary>
         public bool FacesPoint(Vector3 point) {
             return Vector3.Dot(normal, point-v0.pos) > 0; //Face.Epsilon;
         }
@@ -69,6 +110,12 @@ namespace ProceduralStructures {
             v0.triangles.Remove(this);
             v1.triangles.Remove(this);
             v2.triangles.Remove(this);
+        }
+
+        public void ResetTriangleLinks() {
+            v0.SetTriangle(this);
+            v1.SetTriangle(this);
+            v2.SetTriangle(this);
         }
 
         public void SetUVProjected(float uvScale) {
@@ -102,9 +149,62 @@ namespace ProceduralStructures {
             return new Vector2((dot+uOffset) * uvScale, Vector3.Angle(vertex - ms, Vector3.down) / 180f * r * uvScale);
         }
 
+        public bool RayHit(Vector3 origin, Vector3 direction, bool ignoreBack, out bool fromBack, out Vector3 intersection) {
+            Vector3 edge1 = v1.pos-v0.pos;
+            Vector3 edge2 = v2.pos-v0.pos;
+            fromBack = false;
+            intersection = Vector3.zero;
+            float rayHitLength;
+            if (GeometryTools.RayHitTriangle(origin, direction, v0.pos, v1.pos, v2.pos, out intersection, out rayHitLength)) {
+                return true;
+            }
+            if (!ignoreBack) {
+                fromBack = true;
+                if (GeometryTools.RayHitTriangle(origin, direction, v0.pos, v2.pos, v1.pos, out intersection, out rayHitLength)) {
+                    return true;
+                }
+            }
+            return false;
+        }
+
+        public bool EdgeIntersection(Vector3 a, Vector3 b, out Vector3 intersection) {
+            float rayHitLength;
+            if (MeshObject.SameInTolerance(v0.pos, a) || MeshObject.SameInTolerance(v1.pos, a) || MeshObject.SameInTolerance(v2.pos, a)) {
+                intersection = a;
+                return true;
+            }
+            if (MeshObject.SameInTolerance(v0.pos, b) || MeshObject.SameInTolerance(v1.pos, b) || MeshObject.SameInTolerance(v2.pos, b)) {
+                intersection = b;
+                return true;
+            }
+            if (GeometryTools.PointOnEdge(v0.pos, a, b, out rayHitLength)) {
+                intersection = v0.pos;
+                return true;
+            }
+            if (GeometryTools.PointOnEdge(v1.pos, a, b, out rayHitLength)) {
+                intersection = v1.pos;
+                return true;
+            }
+            if (GeometryTools.PointOnEdge(v2.pos, a, b, out rayHitLength)) {
+                intersection = v2.pos;
+                return true;
+            }
+            if (GeometryTools.RayHitTriangle(a, b-a, v0.pos, v1.pos, v2.pos, out intersection, out rayHitLength)) {
+                if (rayHitLength <= 1) {
+                    return true;
+                }
+            }
+            if (GeometryTools.RayHitTriangle(a, b-a, v0.pos, v2.pos, v1.pos, out intersection, out rayHitLength)) {
+                if (rayHitLength <= 1) {
+                    return true;
+                }
+            }
+            return false;
+        }
+
         public override string ToString()
         {
-            return "T[" + v0 + "," + v1 + "," + v2 + "]";
+            return string.Format("T{0}[{1},{2},{3}]", id, v0, v1, v2);
         }
     }
 }

@@ -193,6 +193,30 @@ namespace ProceduralStructures {
             }
         }
 
+        public MeshObject GetCaveConnection(CaveDefinition cave, Vector3 center, Tangent tangent) {
+            // construct the shape
+            List<Vector3> shapeEdgeList = new List<Vector3>();
+            switch (cave.crosscutShape) {
+                case CaveDefinition.Shape.O_Shaped:
+                shapeEdgeList = ConstructOShape(cave.baseWidth, cave.baseHeight);
+                break;
+                case CaveDefinition.Shape.Tunnel:
+                default:
+                shapeEdgeList = ConstructTunnelShape(cave.baseWidth, cave.baseHeight);
+                break;
+            }
+            for(int i = 0; i < cave.shapeSmoothing; i++) {
+                shapeEdgeList = SmoothVertices(shapeEdgeList);
+            }
+            Vector3 localPos = tangent.position;
+            Quaternion localRotation = Quaternion.LookRotation(tangent.direction, Vector3.up);
+            Vector3 localScale = new Vector3(tangent.scaleWidth, tangent.scaleHeight, 1f);
+            MeshObject connector = new MeshObject();
+            List<Vertex> currentEdgeLoop = connector.AddRange(Builder.MoveVertices(Builder.RotateVertices(
+                Builder.ScaleVertices(shapeEdgeList, localScale), localRotation), localPos));
+            return connector;
+        }
+
         public void RebuildCave(CaveDefinition cave, WayPointList tunnel, GameObject target) {
             MeshObject cavemesh = new MeshObject();
             // construct the shape
@@ -269,20 +293,16 @@ namespace ProceduralStructures {
         }
 
         public List<Vector3> SmoothVertices(List<Vector3> l) {
-            Vector3 center = Builder.FindCentroid(l);
             List<Vector3> newList = new List<Vector3>(l.Count*2);
             for (int i = 0; i < l.Count; i++) {
-                newList.Add(l[i]);
                 int j = i < l.Count-1 ? i+1 : 0;
-                Vector3 interpolated = (l[i] + l[j])/2f;
-                float smoothedDist = ((center - l[i]).magnitude + (center - l[j]).magnitude)/2;
-                float dist = (interpolated - center).magnitude;
-                newList.Add(interpolated / dist * smoothedDist);
+                newList.Add(0.75f*l[i] + 0.25f*l[j]);
+                newList.Add(0.25f*l[i] + 0.75f*l[j]);
             }
             return newList;
         }
 
-        private List<Vector3> ConstructTunnelShape(float width, float height) {
+        public List<Vector3> ConstructTunnelShape(float width, float height) {
             Vector3 a = new Vector3(0, 0, 0);
             Vector3 b = new Vector3(-0.4f * width, 0.06f * height, 0);
             Vector3 c = new Vector3(-0.5f * width, 0.12f * height, 0);

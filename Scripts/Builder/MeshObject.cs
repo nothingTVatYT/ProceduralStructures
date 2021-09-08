@@ -5,6 +5,22 @@ using ExtensionMethods;
 namespace ProceduralStructures {
     public class MeshObject {
 
+        protected class DeferredAction {
+            public enum Command { SplitTriangleByLine }
+            public Command command;
+            public Triangle triangle;
+            public Vector3 a;
+            public Vector3 b;
+            public static DeferredAction SplitTriangleAction(Triangle triangle, Vector3 a, Vector3 b) {
+                DeferredAction deferredAction = new DeferredAction();
+                deferredAction.command = Command.SplitTriangleByLine;
+                deferredAction.triangle = triangle;
+                deferredAction.a = a;
+                deferredAction.b = b;
+                return deferredAction;
+            }
+        }
+
         public enum Shading { Flat, Smooth, Auto }
         private static float Epsilon = 1e-3f;
         private static float EpsilonSquared = Epsilon*Epsilon;
@@ -12,6 +28,10 @@ namespace ProceduralStructures {
         protected List<Triangle> triangles = new List<Triangle>();
         public float uvScale;
         public Shading shading = Shading.Flat;
+        public Transform transform;
+        public GameObject targetGameObject;
+        public Material material;
+
         public float area {
             get {
                 float a = 0;
@@ -29,12 +49,16 @@ namespace ProceduralStructures {
         protected int AddUnique(Vector3 pos) {
             int idx = vertices.FindIndex((v) => (SameInTolerance(v.pos,pos)));
             if (idx >= 0) return idx;
-            vertices.Add(new Vertex(pos));
+            Vertex v = new Vertex(pos);
+            v.id = vertices.Count;
+            vertices.Add(v);
             return vertices.Count - 1;
         }
 
         protected int AddUnchecked(Vector3 pos) {
-            vertices.Add(new Vertex(pos));
+            Vertex v = new Vertex(pos);
+            v.id = vertices.Count;
+            vertices.Add(v);
             return vertices.Count - 1;
         }
 
@@ -71,6 +95,28 @@ namespace ProceduralStructures {
             // for visualizing only
             triangle.SetUVProjected(uvScale);
             return triangles.Count-1;
+        }
+
+        public int AddTriangle(Triangle triangle) {
+            triangles.Add(triangle);
+            return triangles.Count-1;
+        }
+
+        public void Remove(Triangle triangle) {
+            triangle.RemoveTriangleLinks();
+            triangles.Remove(triangle);
+        }
+
+        public void RemoveTriangles(IEnumerable<Triangle> triangleList) {
+            foreach (Triangle t in triangleList) {
+                //t.RemoveTriangleLinks();
+                triangles.Remove(t);
+            }
+        }
+        
+        public void Remove(Vertex v) {
+            RemoveTriangles(v.triangles);
+            vertices.Remove(v);
         }
 
         public void AddObject(MeshObject other) {
@@ -169,8 +215,53 @@ namespace ProceduralStructures {
             indices[0] = AddTriangle(triangle.v0, triangle.v1, v3);
             indices[1] = AddTriangle(triangle.v1, triangle.v2, v3);
             indices[2] = AddTriangle(triangle.v2, triangle.v0, v3);
-            Debug.Log("Created " + triangles[indices[0]] + " and " + triangles[indices[1]] + " and " + triangles[indices[2]] + " from " + triangle);
+            //Debug.Log("Created " + triangles[indices[0]] + " and " + triangles[indices[1]] + " and " + triangles[indices[2]] + " from " + triangle);
             return indices;
+        }
+
+        public List<Triangle> SplitTriangleByLine(Triangle triangle, Vector3 a, Vector3 b) {
+            List<Triangle> result = new List<Triangle>();
+            // calculate the two new vertices, i.e. the intersections of a line through ab and two edges
+            Vector3 iv;
+            Vertex v3, v4;
+            DebugLocalLine(a, b, Color.yellow);
+            DebugLocalLine(triangle.v0.pos, triangle.v1.pos, Color.red);
+            if (GeometryTools.EdgeLineIntersect(triangle.v0.pos, triangle.v1.pos, a, b, out iv)) {
+                v3 = vertices[Add(iv)];
+                if (GeometryTools.EdgeLineIntersect(triangle.v1.pos, triangle.v2.pos, a, b, out iv)) {
+                    // intersect v0v1 and v1v2
+                    triangle.RemoveTriangleLinks();
+                    result.Add(triangle);
+                    v4 = vertices[Add(iv)];
+                    result.Add(triangles[AddTriangle(v3, triangle.v1, v4)]);
+                    result.Add(triangles[AddTriangle(triangle.v0, v3, v4)]);
+                    triangle.v1 = v4;
+                    triangle.ResetTriangleLinks();
+                } else if (GeometryTools.EdgeLineIntersect(triangle.v2.pos, triangle.v0.pos, a, b, out iv)) {
+                    // intersect v0v1 and v2v0
+                    triangle.RemoveTriangleLinks();
+                    result.Add(triangle);
+                    v4 = vertices[Add(iv)];
+                    result.Add(triangles[AddTriangle(v3, triangle.v1, triangle.v2)]);
+                    result.Add(triangles[AddTriangle(v3, triangle.v2, v4)]);
+                    triangle.v1 = v3;
+                    triangle.v2 = v4;
+                    triangle.ResetTriangleLinks();
+                }
+            } else if (GeometryTools.EdgeLineIntersect(triangle.v1.pos, triangle.v2.pos, a, b, out iv)) {
+                v3 = vertices[Add(iv)];
+                if (GeometryTools.EdgeLineIntersect(triangle.v2.pos, triangle.v0.pos, a, b, out iv)) {
+                    // intersect v1v2 and v2v0
+                    triangle.RemoveTriangleLinks();
+                    result.Add(triangle);
+                    v4 = vertices[Add(iv)];
+                    result.Add(triangles[AddTriangle(triangle.v0, v3, v4)]);
+                    result.Add(triangles[AddTriangle(v4, v3, triangle.v2)]);
+                    triangle.v2 = v3;
+                    triangle.ResetTriangleLinks();
+                }
+            }
+            return result;
         }
 
         public void SplitBigTriangles(float maxRelativeSize, float offset) {
@@ -209,16 +300,89 @@ namespace ProceduralStructures {
             return indices.ToArray();
         }
 
-        public List<Triangle> GetNeighbors(Triangle triangle) {
-            List<Triangle> result = new List<Triangle>();
-            foreach (Vertex vertex in triangle.GetVertices()) {
-                foreach (Triangle t in vertex.triangles) {
-                    if (t != triangle && triangle.SharesEdgeWith(t) && !result.Contains(t)) {
-                        result.Add(t);
-                    }
+        public int[] FillPolygon(List<Vertex> edgeLoop, List<Vertex> hole) {
+            List<int> createdTriangles = new List<int>();
+
+            // Debug.Log("polygon has " + edgeLoop.Count + " vertices.");
+            // Debug.Log("hole has " + hole.Count + " vertices.");
+            hole.Reverse();
+
+            int vIdx = 0;
+            int hIdx = 0;
+            for (int h = 0; h < hole.Count; h++) {
+                Vertex v = hole[h];
+                for (int i = 0; i < edgeLoop.Count-1; i++) {
+                    int j = i < edgeLoop.Count-2 ? i+1 : 0;
+                    Triangle t = new Triangle(v, edgeLoop[j], edgeLoop[i]);
+                    if (t.ContainsAnyVertex(hole) || t.ContainsAnyVertex(edgeLoop)) continue;
+                    vIdx = i;
+                    hIdx = h;
+                    createdTriangles.Add(AddTriangle(t));
+                    break;
                 }
+                if (createdTriangles.Count > 0) break;
             }
-            return result;
+            if (createdTriangles.Count == 0) {
+                Debug.LogWarning("Could not create a starting triangle to close the edge loop.");
+            } else {
+                List<Vertex> polygon = new List<Vertex>();
+                polygon.AddRange(edgeLoop.GetRange(0, vIdx+1));
+                polygon.AddRange(hole.GetRange(hIdx, hole.Count-hIdx));
+                polygon.AddRange(hole.GetRange(0, hIdx+1));
+                polygon.AddRange(edgeLoop.GetRange(vIdx+1, edgeLoop.Count-vIdx-1));
+                
+                // for (int i = 0; i < polygon.Count; i++) {
+                //     DebugLocalPoint(polygon[i].pos, "pv-"+i+"-"+polygon[i].id);
+                // }
+                createdTriangles.AddRange(FillPolygon(polygon));
+            }
+            return createdTriangles.ToArray();
+        }
+
+        public int[] FillPolygon(List<Vertex> edgeLoop) {
+            Vector3 center = GetCenter(edgeLoop);
+            Vector3 normal = -Vector3.Cross(edgeLoop[1].pos-edgeLoop[0].pos, edgeLoop[2].pos-edgeLoop[0].pos).normalized;
+            LinkedList<Vertex> list = new LinkedList<Vertex>(edgeLoop);
+            LinkedListNode<Vertex> current = list.First;
+            List<int> createdTriangles = new List<int>();
+            int tAtOverflow = 0;
+            while (list.Count > 2) {
+                // search a vertex that has an inner angle of less than 180 forming with its neighbors
+                LinkedListNode<Vertex> nextNeighbor = current.Next ?? list.First;
+                Vector3 tangent = nextNeighbor.Value.pos - current.Value.pos;
+                //DebugLocalVector(current.Value.pos, tangent, Color.green);
+                LinkedListNode<Vertex> secondNextNeighbor = nextNeighbor.Next ?? list.First;
+                Vector3 nextTangent = secondNextNeighbor.Value.pos - nextNeighbor.Value.pos;
+                //DebugLocalVector(nextNeighbor.Value.pos, nextTangent, Color.green);
+                Vector3 vin = Vector3.Cross(tangent, normal);
+                //DebugLocalVector(current.Value.pos, vin, Color.red);
+                Vector3 nextIn = Vector3.Cross(nextTangent, normal);
+                //DebugLocalVector(nextNeighbor.Value.pos, nextIn, Color.red);
+                if (Vector3.Dot(vin, nextTangent) > 0) {
+                    Triangle tNew = new Triangle(current.Value, secondNextNeighbor.Value, nextNeighbor.Value);
+                    if (tNew.ContainsAnyVertex(list)) {
+                        // this would be an invalid triangle
+                        current = current.Next ?? list.First;
+                        tNew.RemoveTriangleLinks();
+                    } else {
+                        createdTriangles.Add(AddTriangle(tNew));
+                        LinkedListNode<Vertex> newStartingPoint = secondNextNeighbor;
+                        list.Remove(nextNeighbor);
+                    }
+                } else {
+                    if (current.Next == null) {
+                        // inhibit endless loops
+                        if (createdTriangles.Count == tAtOverflow) {
+                            Debug.LogWarning("Could not create any more triangles with " + list.Count + " vertices left.");
+                            break;
+                        }
+                        tAtOverflow = createdTriangles.Count;
+                    }
+                    current = current.Next ?? list.First;
+                }
+                //if (createdTriangles.Count > 0) break;
+            }
+            return createdTriangles.ToArray();
         }
 
         public void Clear() {
@@ -266,42 +430,326 @@ namespace ProceduralStructures {
             }
         }
 
+        public Vector3 WorldPosition(Vertex v) {
+            if (transform != null) {
+                return transform.TransformPoint(v.pos);
+            }
+            return v.pos;
+        }
+
+        public Vector3 WorldPosition(Vector3 v) {
+            if (transform != null) {
+                return transform.TransformPoint(v);
+            }
+            return v;
+        }
+
+        public Vector3 LocalPosition(Vector3 v) {
+            if (transform != null) {
+                return transform.InverseTransformPoint(v);
+            }
+            return v;
+        }
+
+        public bool TriangleTriangleIntersection(Triangle triangle1, Triangle triangle2, out Vector3[] intersections) {
+            int verticesInFront = 0;
+            int verticesBehind = 0;
+            foreach  (Vertex v in triangle2.GetVertices()) {
+                if (triangle1.FacesPoint(v.pos)) {
+                    verticesInFront++;
+                } else {
+                    verticesBehind++;
+                }
+            }
+            if (verticesInFront == 0 || verticesBehind == 0) {
+                intersections = new Vector3[0];
+                return false;
+            }
+            List<Vector3> intersectionPoints = new List<Vector3>();
+            Vector3 intersection;
+            if (triangle1.EdgeIntersection(triangle2.v0.pos, triangle2.v1.pos, out intersection)) {
+                intersectionPoints.Add(intersection);
+            }
+            if (triangle1.EdgeIntersection(triangle2.v1.pos, triangle2.v2.pos, out intersection)) {
+                intersectionPoints.Add(intersection);
+            }
+            if (triangle1.EdgeIntersection(triangle2.v2.pos, triangle2.v0.pos, out intersection)) {
+                intersectionPoints.Add(intersection);
+            }
+            if (triangle2.EdgeIntersection(triangle1.v0.pos, triangle1.v1.pos, out intersection)) {
+                intersectionPoints.Add(intersection);
+            }
+            if (triangle2.EdgeIntersection(triangle1.v1.pos, triangle1.v2.pos, out intersection)) {
+                intersectionPoints.Add(intersection);
+            }
+            if (triangle2.EdgeIntersection(triangle1.v2.pos, triangle1.v0.pos, out intersection)) {
+                intersectionPoints.Add(intersection);
+            }
+            if (intersectionPoints.Count == 0) {
+                intersections = new Vector3[0];
+                return false;
+            }
+            if (intersectionPoints.Count != 2) {
+                Debug.LogWarning("TriangleTriangleIntersection found " + intersectionPoints.Count + " points.");
+                intersections = intersectionPoints.ToArray();
+                return false;
+            }
+            intersections = intersectionPoints.ToArray();
+            return true;
+        }
+
+        public void AddConnector(MeshObject other) {
+            List<Triangle> changedTriangles = new List<Triangle>();
+            Vector3 center = GetCenter();
+            Vector3 otherCenter = LocalPosition(other.WorldPosition(other.GetCenter()));
+            Vector3 projectionDirection = (center - otherCenter).normalized;
+            Vertex centerVertex = new Vertex(center + (center - otherCenter) * 10f);
+
+            //DebugLocalPoint(center, "DEBUG-Center");
+            List<Vertex> newVertices = new List<Vertex>();
+            List<Vertex> addedVertices = new List<Vertex>();
+            foreach (Vertex v in other.vertices) {
+                newVertices.Add(vertices[Add(LocalPosition(other.WorldPosition(v)))]);
+            }
+            CircularReadonlyList<Vertex> ring = new CircularReadonlyList<Vertex>(newVertices);
+            for (int i = 0; i < newVertices.Count; i++) {
+                Triangle cutTriangle = new Triangle(centerVertex, ring[i], ring[i+1]);
+                List<DeferredAction> deferredActions = new List<DeferredAction>();
+                foreach (Triangle triangle in triangles) {
+                    if (triangle.FacesPoint(ring[i].pos)) {
+                        bool fromback;
+                        Vector3 intersection;
+                        if (triangle.RayHit(ring[i].pos, projectionDirection, false, out fromback, out intersection)) {
+                            addedVertices.Add(vertices[Add(intersection)]);
+                        }
+                    }
+                }
+            }
+
+            MeshObject cutObject = new MeshObject();
+            cutObject.transform = transform;
+            List<Vertex> fromVertices = new List<Vertex>();
+            List<Vertex> toVertices = new List<Vertex>();
+            foreach (Vertex v in addedVertices) {
+                Vector3 localPos = v.pos;
+                toVertices.Add(cutObject.vertices[cutObject.Add(localPos + projectionDirection * 0.5f)]);
+                fromVertices.Add(cutObject.vertices[cutObject.Add(localPos - projectionDirection * 0.5f)]);
+            }
+            cutObject.BridgeEdgeLoops(fromVertices, toVertices, 1);
+            cutObject.CreateTriangleFan(toVertices);
+            cutObject.FlipNormals(cutObject.CreateTriangleFan(fromVertices));
+
+            //cutObject.Build(other.targetGameObject, other.material);
+            List<Vertex> outerVertices = RemoveEverythingInside(cutObject);
+            int[] createdTriangles = FillPolygon(outerVertices, addedVertices);
+        }
+
+        public List<Vertex> RemoveEverythingInside(MeshObject other) {
+            HashSet<Vertex> affectedVertices = new HashSet<Vertex>();
+            HashSet<Triangle> affectedTriangles = new HashSet<Triangle>();
+            HashSet<Vertex> outerVertices = new HashSet<Vertex>();
+            HashSet<Vertex> innerVertices = new HashSet<Vertex>();
+            // first check vertices
+            foreach (Vertex v in vertices) {
+                if (other.Contains(v.pos)) {
+                    affectedVertices.Add(v);
+                    foreach (Triangle t in v.triangles) {
+                        affectedTriangles.Add(t);
+                        outerVertices.Add(t.v0);
+                        outerVertices.Add(t.v1);
+                        outerVertices.Add(t.v2);
+                    }
+                }
+            }
+            foreach (Triangle t in triangles) {
+                if (affectedTriangles.Contains(t)) {
+                    continue;
+                }
+                foreach (Triangle ot in other.triangles) {
+                    Vector3[] intersections;
+                    if (TriangleTriangleIntersection(t, ot, out intersections)) {
+                        affectedTriangles.Add(t);
+                        outerVertices.Add(t.v0);
+                        outerVertices.Add(t.v1);
+                        outerVertices.Add(t.v2);
+                        foreach (Vector3 i in intersections) {
+                            innerVertices.Add(new Vertex(i));
+                        }
+                        break;
+                    }
+                }
+            }
+            outerVertices.RemoveWhere( v => affectedVertices.Contains(v));
+
+            // Debug.Log("Found " + affectedVertices.Count + " vertices and " + affectedTriangles.Count + " triangles affected.");
+            // Debug.Log("Found " + innerVertices.Count + " inner and " + outerVertices.Count + " outer vertices.");
+            // foreach (Vertex v in outerVertices) {
+            //     DebugLocalPoint(v.pos, Color.blue);
+            // }
+            // foreach (Vertex v in innerVertices) {
+            //     DebugLocalPoint(v.pos, Color.red);
+            // }
+            foreach(Vertex v in affectedVertices) {
+                Remove(v);
+            }
+            foreach(Triangle t in affectedTriangles) {
+                Remove(t);
+            }
+
+            outerVertices.RemoveWhere(v => v.triangles.Count == 0);
+            List<Vertex> ov = new List<Vertex>(outerVertices);
+            return SortConnectedVertices(ov);
+        }
+
+        public List<Vertex> SortConnectedVertices(ICollection<Vertex> l) {
+            List<Vertex> sortedList = new List<Vertex>();
+            IEnumerator<Vertex> iter = l.GetEnumerator();
+            iter.MoveNext();
+            Vertex start = iter.Current;
+            if (!vertices.Contains(start)) {
+                Debug.LogWarning("Found a starting vertex " + start + " that is not part of this object.");
+            }
+            Vertex next = null;
+            sortedList.Add(start);
+            l.Remove(start);
+            while (l.Count > 0) {
+                foreach (Triangle triangle in start.triangles) {
+                    // sanity check
+                    if (!triangles.Contains(triangle)) {
+                        Debug.LogWarning("A triangle is linked in " + start + " which is not part of this object: " + triangle);
+                        continue;
+                    }
+                    foreach (Vertex v in triangle.GetVertices()) {
+                        if (v != start && l.Contains(v) && !IsSharedEdge(start, v)) {
+                            next = v;
+                            break;
+                        }
+                    }
+                    if (next != null) break;
+                }
+                if (next != null) {
+                    sortedList.Add(next);
+                    l.Remove(next);
+                    start = next;
+                    if (!vertices.Contains(next)) {
+                        Debug.LogWarning("Found a vertex " + next + " that is not part of this object.");
+                        break;
+                    }
+                    next = null;
+                } else {
+                    Debug.LogWarning("The list is not connected. " + l.Count + " vertices are left.");
+                    break;
+                }
+            }
+            return sortedList;
+        }
+
+        public bool IsSharedEdge(Vertex a, Vertex b) {
+            List<Triangle> common = a.triangles.FindAll(t => b.triangles.Contains(t));
+            return common.Count > 1;
+        }
+
+        public bool Contains(Vector3 v) {
+            foreach (Triangle t in triangles) {
+                if (!IsBehind(t, v)) {
+                    return false;
+                }
+            }
+            return true;
+        }
+
+        public void Decimate(int maxVertices) {
+            while (vertices.Count > maxVertices) {
+                float minDist = float.MaxValue;
+                int i1 = 0;
+                int i2 = 0;
+                for (int i = 0; i < vertices.Count-1; i++) {
+                    for (int j = i+1; j < vertices.Count; j++) {
+                        float dist = (vertices[i].pos - vertices[j].pos).magnitude;
+                        if (dist < minDist) {
+                            minDist = dist;
+                            i1 = i; i2 = j;
+                        }
+                    }
+                }
+                vertices[i1].pos = (vertices[i1].pos + vertices[i2].pos)/2;
+                vertices.RemoveAt(i2);
+            }
+        }
+
+        public void DebugLocalPoint(Vector3 vector3, string name) {
+            GameObject go = new GameObject(name);
+            if (transform != null) {
+                go.transform.position = transform.TransformPoint(vector3);
+            } else {
+                go.transform.position = vector3;
+            }
+        }
+
+        public void DebugLocalLine(Vector3 a, Vector3 b, Color color) {
+            Vector3 start = a - (b-a).normalized * 10f;
+            Vector3 end = b + (b-a).normalized * 10f;
+            Debug.DrawLine(transform.TransformPoint(start), transform.TransformPoint(end), color, 5);
+        }
+
+        public void DebugLocalVector(Vector3 a, Vector3 direction, Color color) {
+            Vector3 start = a;
+            Vector3 end = a + direction * 2f;
+            Debug.DrawLine(transform.TransformPoint(start), transform.TransformPoint(end), color, 5);
+        }
+
+        public void DebugLocalPoint(Vector3 a, Color color) {
+            Vector3 w = transform.TransformPoint(a);
+            float d = 0.5f;
+            Debug.DrawLine(w-Vector3.right*d, w+Vector3.right*d, color, 5);
+            Debug.DrawLine(w-Vector3.up*d, w+Vector3.down*d, color, 5);
+            Debug.DrawLine(w-Vector3.forward*d, w+Vector3.back*d, color, 5);
+        }
+
+        string ToString(Vector3[] l) {
+            string result = "[";
+            foreach (Vector3 v in l) {
+                result += string.Format("({0:F4},{1:F4},{2:F4})", v.x, v.y, v.z);
+            }
+            result += "]";
+            return result;
+        }
         protected Mesh BuildMesh() {
             Mesh mesh = new Mesh();
             int uniqueVertices = 0;
             foreach (Vertex vertex in vertices) {
                 uniqueVertices += vertex.triangles.Count;
             }
-            Vector3[] verts = new Vector3[uniqueVertices];
-            Vector2[] uv = new Vector2[uniqueVertices];
+            List<Vector3> verts = new List<Vector3>();
+            List<Vector2> uv = new List<Vector2>();
             int[] tris = new int[3 * triangles.Count];
-            Vector3[] normals = new Vector3[uniqueVertices];
+            List<Vector3> normals = new List<Vector3>();
 
             int vertIndex = 0;
             int trisIndex = 0;
             foreach (Triangle triangle in triangles) {
                 Vector3 n = triangle.normal;
-                verts[vertIndex] = triangle.v0.pos;
-                uv[vertIndex] = triangle.uv0;
+                verts.Add(triangle.v0.pos);
+                uv.Add(triangle.uv0);
                 tris[trisIndex++] = vertIndex;
-                normals[vertIndex] = CalculateNormal(triangle.v0, triangle);
+                normals.Add(CalculateNormal(triangle.v0, triangle));
                 vertIndex++;
-                verts[vertIndex] = triangle.v1.pos;
-                uv[vertIndex] = triangle.uv1;
+                verts.Add(triangle.v1.pos);
+                uv.Add(triangle.uv1);
                 tris[trisIndex++] = vertIndex;
-                normals[vertIndex] = CalculateNormal(triangle.v1, triangle);
+                normals.Add(CalculateNormal(triangle.v1, triangle));
                 vertIndex++;
-                verts[vertIndex] = triangle.v2.pos;
-                uv[vertIndex] = triangle.uv2;
+                verts.Add(triangle.v2.pos);
+                uv.Add(triangle.uv2);
                 tris[trisIndex++] = vertIndex;
-                normals[vertIndex] = CalculateNormal(triangle.v2, triangle);
+                normals.Add(CalculateNormal(triangle.v2, triangle));
                 vertIndex++;
             }
             
-            mesh.vertices = verts;
+            mesh.vertices = verts.ToArray();
             mesh.triangles = tris;
-            mesh.uv = uv;
-            mesh.normals = normals;
+            mesh.uv = uv.ToArray();
+            mesh.normals = normals.ToArray();
             mesh.name = "generated mesh";
             return mesh;
         }
@@ -335,6 +783,9 @@ namespace ProceduralStructures {
         }
         public void Build(GameObject target, Material material) {
                         GameObject childByMaterial = null;
+            if (material == null) {
+                material = new Material(Shader.Find("Standard"));
+            }
             foreach (Transform t in target.transform) {
                 if (t.gameObject.name == "mat-"+material.name) {
                     childByMaterial = t.gameObject;
