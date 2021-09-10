@@ -1,0 +1,28 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 5b8b73267c1a0de21ad91f8cdb0aa12a, type: 3}
+  m_Name: HullDebug
+  m_EditorClassIdentifier: 
+  listName: Hull Debug
+  vertices:
+  - {x: -19.910013, y: 11.7, z: -9.040012}
+  - {x: -20.909992, y: 11.7, z: -9.039992}
+  - {x: -19.910013, y: 10.7, z: -9.040012}
+  - {x: -20.909992, y: 10.7, z: -9.039992}
+  - {x: -19.909975, y: 11.7, z: -10.0400095}
+  - {x: -20.910013, y: 11.7, z: -10.039971}
+  - {x: -19.909975, y: 10.7, z: -10.0400095}
+  - {x: -20.910013, y: 10.7, z: -10.039971}
+  - {x: -26.08997, y: 10.94, z: -9.039982}
+  - {x: -27.090027, y: 10.94, z: -9.04}
+  - {x: -26.08997, y: 9.94, z: -9.039982}
+  - {x: -27.090027, y: 9.94, z: -9.04}

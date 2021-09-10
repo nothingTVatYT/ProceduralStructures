@@ -42,6 +42,14 @@ namespace ProceduralStructures {
             }
         }
 
+        public int VerticesCount {
+            get { return vertices.Count; }
+        }
+
+        public int TrianglesCount {
+            get { return triangles.Count; }
+        }
+
         public virtual int Add(Vector3 pos) {
             return AddUnique(pos);
         }
@@ -91,13 +99,26 @@ namespace ProceduralStructures {
 
         public int AddTriangle(Vertex v0, Vertex v1, Vertex v2) {
             Triangle triangle = new Triangle(v0, v1, v2);
-            triangles.Add(triangle);
-            // for visualizing only
-            triangle.SetUVProjected(uvScale);
+            Triangle duplicate = triangles.Find(t => t.Equals(triangle));
+            if (duplicate != null) {
+                Debug.LogWarning("Refuse to add a duplicated triangle " + triangle);
+                triangle.RemoveTriangleLinks();
+                return triangles.IndexOf(duplicate);
+            } else {
+                triangles.Add(triangle);
+                // for visualizing only
+                triangle.SetUVProjected(uvScale);
+            }
             return triangles.Count-1;
         }
 
         public int AddTriangle(Triangle triangle) {
+            Triangle duplicate = triangles.Find(t => t.Equals(triangle));
+            if (duplicate != null) {
+                Debug.LogWarning("Refuse to add a duplicated triangle " + triangle);
+                triangle.RemoveTriangleLinks();
+                return triangles.IndexOf(duplicate);
+            }
             triangles.Add(triangle);
             return triangles.Count-1;
         }
@@ -129,6 +150,39 @@ namespace ProceduralStructures {
                 nt.uv1 = t.uv1;
                 nt.uv2 = t.uv2;
             }
+        }
+
+        public bool SwapEdges(Triangle t1, Triangle t2) {
+            bool success = false;
+            Vertex[] t1v = t1.GetVertices();
+            Vertex[] t2v = t2.GetVertices();
+            for (int i = 0; i < t1v.Length; i++) {
+                int j = System.Array.IndexOf(t2v, t1v[i]);
+                if (j < 0) {
+                    // t1v[i] is a unique vertex
+                    for (int k = 0; k < t2v.Length; k++) {
+                        int l = System.Array.IndexOf(t1v, t2v[k]);
+                        if (l < 0) {
+                            // t2v[l] is the second unique vertex
+                            // swapping the edge means we replace t1v[i+2] with t2v[l] and t2v[l+2] with t1v[i]
+                            int i2 = (i+2) % 3;
+                            int l2 = (l+2) % 3;
+                            t1.RemoveTriangleLinks();
+                            t2.RemoveTriangleLinks();
+                            Triangle new1 = new Triangle(t1.v0, t1.v1, t1.v2);
+                            Triangle new2 = new Triangle(t2.v0, t2.v1, t2.v2);
+                            new1.SetVertex(i2, t2v[k]);
+                            new2.SetVertex(l2, t1v[i]);
+                            Remove(t1);
+                            Remove(t2);
+                            AddTriangle(new1);
+                            AddTriangle(new2);
+                            success = true;
+                        }
+                    }
+                }
+            }
+            return success;
         }
 
         public int GetTriangleHit(Vector3 origin, Vector3 direction) {
@@ -551,7 +605,6 @@ namespace ProceduralStructures {
             HashSet<Vertex> affectedVertices = new HashSet<Vertex>();
             HashSet<Triangle> affectedTriangles = new HashSet<Triangle>();
             HashSet<Vertex> outerVertices = new HashSet<Vertex>();
-            HashSet<Vertex> innerVertices = new HashSet<Vertex>();
             // first check vertices
             foreach (Vertex v in vertices) {
                 if (other.Contains(v.pos)) {
@@ -575,9 +628,6 @@ namespace ProceduralStructures {
                         outerVertices.Add(t.v0);
                         outerVertices.Add(t.v1);
                         outerVertices.Add(t.v2);
-                        foreach (Vector3 i in intersections) {
-                            innerVertices.Add(new Vertex(i));
-                        }
                         break;
                     }
                 }
@@ -588,9 +638,6 @@ namespace ProceduralStructures {
             // Debug.Log("Found " + innerVertices.Count + " inner and " + outerVertices.Count + " outer vertices.");
             // foreach (Vertex v in outerVertices) {
             //     DebugLocalPoint(v.pos, Color.blue);
-            // }
-            // foreach (Vertex v in innerVertices) {
-            //     DebugLocalPoint(v.pos, Color.red);
             // }
             foreach(Vertex v in affectedVertices) {
                 Remove(v);
@@ -604,18 +651,90 @@ namespace ProceduralStructures {
             return SortConnectedVertices(ov);
         }
 
+        public List<Vertex> FindBoundaryAround(List<Vertex> surounding) {
+            Debug.Log("boundary check: got " + surounding.Count + " vertices.");
+            List<Vertex> result = new List<Vertex>();
+            HashSet<Triangle> attachedTriangles = new HashSet<Triangle>();
+            surounding.ForEach(v => v.triangles.ForEach(t => attachedTriangles.Add(t)));
+            Debug.Log("attached triangles: " + attachedTriangles.Count);
+            List<TEdge> edges = new List<TEdge>();
+            foreach (Triangle triangle in attachedTriangles) {
+                edges.AddRange(triangle.GetNonManifoldEdges());
+            }
+            Debug.Log("non-manifold edges: " + edges.Count);
+            if (edges.Count == 0) {
+                Debug.LogWarning("expected non-manifold edges from: " + new List<Triangle>(attachedTriangles).Elements() + " using " + surounding.Elements());
+                return result;
+            }
+            edges.ForEach(e => e.Flip());
+            LinkedList<TEdge> linked = new LinkedList<TEdge>();
+            TEdge start = edges[edges.Count-1];
+            linked.AddFirst(start);
+            edges.Remove(start);
+            TEdge end = start;
+            bool deadStart = false;
+            bool deadEnd = false;
+            while (edges.Count > 0) {
+                TEdge successor = edges.Find(e => e.a == end.b);
+                if (successor == null) {
+                    successor = edges.Find(e => e.b == end.b);
+                    if (successor != null) {
+                        edges.Remove(successor);
+                        successor.Flip();
+                    }
+                } else {
+                    edges.Remove(successor);
+                }
+                if (successor != null) {
+                    linked.AddLast(successor);
+                    end = successor;
+                } else {
+                    deadEnd = true;
+                }
+                TEdge predecessor = edges.Find(e => e.b == start.a);
+                if (predecessor == null) {
+                    predecessor = edges.Find(e => e.a == start.a);
+                    if (predecessor != null) {
+                        edges.Remove(predecessor);
+                        predecessor.Flip();
+                    }
+                } else {
+                    edges.Remove(predecessor);
+                }
+                if (predecessor != null) {
+                    linked.AddFirst(predecessor);
+                    start = predecessor;
+                } else {
+                    deadStart = true;
+                }
+                if (deadEnd && deadStart) {
+                    Debug.LogWarning("Could not find a linked list of edges, " + edges.Count + " left.");
+                    // build what we have so far for debugging
+                    Build(targetGameObject, material);
+                    throw new System.Exception("Could not find a linked list of edges.");
+                    //break;
+                }
+            }
+            foreach (TEdge e in linked) {
+                result.Add(e.a);
+            }
+            return result;
+        }
+
         public List<Vertex> SortConnectedVertices(ICollection<Vertex> l) {
+            List<Vertex> loop = new List<Vertex>();
+            loop.AddRange(l);
+            // ignore stray vertices
+            loop.RemoveAll(v => v.triangles.Count == 0);
             List<Vertex> sortedList = new List<Vertex>();
-            IEnumerator<Vertex> iter = l.GetEnumerator();
-            iter.MoveNext();
-            Vertex start = iter.Current;
+            Vertex start = loop[0];
             if (!vertices.Contains(start)) {
                 Debug.LogWarning("Found a starting vertex " + start + " that is not part of this object.");
             }
             Vertex next = null;
             sortedList.Add(start);
-            l.Remove(start);
-            while (l.Count > 0) {
+            loop.Remove(start);
+            while (loop.Count > 0) {
                 foreach (Triangle triangle in start.triangles) {
                     // sanity check
                     if (!triangles.Contains(triangle)) {
@@ -623,7 +742,7 @@ namespace ProceduralStructures {
                         continue;
                     }
                     foreach (Vertex v in triangle.GetVertices()) {
-                        if (v != start && l.Contains(v) && !IsSharedEdge(start, v)) {
+                        if (v != start && loop.Contains(v) && !IsSharedEdge(start, v)) {
                             next = v;
                             break;
                         }
@@ -632,7 +751,7 @@ namespace ProceduralStructures {
                 }
                 if (next != null) {
                     sortedList.Add(next);
-                    l.Remove(next);
+                    loop.Remove(next);
                     start = next;
                     if (!vertices.Contains(next)) {
                         Debug.LogWarning("Found a vertex " + next + " that is not part of this object.");
@@ -640,7 +759,7 @@ namespace ProceduralStructures {
                     }
                     next = null;
                 } else {
-                    Debug.LogWarning("The list is not connected. " + l.Count + " vertices are left.");
+                    Debug.LogWarning("The list is not connected. " + loop.Count + " vertices are left: " + loop.Elements());
                     break;
                 }
             }
@@ -784,6 +903,7 @@ namespace ProceduralStructures {
             }
             return n;
         }
+        
         public void Build(GameObject target, Material material) {
                         GameObject childByMaterial = null;
             if (material == null) {

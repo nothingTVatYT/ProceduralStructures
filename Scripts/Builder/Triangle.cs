@@ -1,10 +1,10 @@
+using System;
 using System.Collections.Generic;
 using UnityEngine;
 
 namespace ProceduralStructures {
 
-    public class Triangle {
-        public int id;
+    public class Triangle : IEquatable<Triangle> {
         public Vertex v0, v1, v2;
         public Vector2 uv0, uv1, uv2;
         public Vector3 normal {
@@ -34,7 +34,11 @@ namespace ProceduralStructures {
             this.v0.SetTriangle(this);
             this.v1.SetTriangle(this);
             this.v2.SetTriangle(this);
-            id = GetHashCode();
+        }
+
+        public override int GetHashCode()
+        {
+            return v0.GetHashCode() + v1.GetHashCode() + v2.GetHashCode();
         }
 
         public void FlipNormal() {
@@ -45,6 +49,37 @@ namespace ProceduralStructures {
 
         public Vertex[] GetVertices() {
             return new Vertex[] { v0, v1, v2 };
+        }
+
+        public void SetVertex(int idx, Vertex v) {
+            RemoveTriangleLinks();
+            switch (idx) {
+                case 0: v0 = v; break;
+                case 1: v1 = v; break;
+                case 2: v2 = v; break;
+                default: ResetTriangleLinks(); throw new System.InvalidOperationException("Index must be 0, 1 or 2 in SetVertex");
+            }
+            ResetTriangleLinks();
+        }
+
+        public bool Equals(Triangle other) {
+            return GetCommonVertices(other) == 3;
+        }
+
+        public override bool Equals(object obj)
+        {
+            if (obj != null && obj is Triangle) return Equals(obj as Triangle);
+            return false;
+        }
+
+        public Triangle GetDuplicate() {
+            Triangle other = v0.triangles.Find(t => t != this && Equals(t));
+            if (other != null) return other;
+            other = v1.triangles.Find(t => t != this && Equals(t));
+            if (other != null) return other;
+            other = v2.triangles.Find(t => t != this && Equals(t));
+            if (other != null) return other;
+            return null;
         }
 
         public bool PointIsAbove(Vector3 point) {
@@ -94,18 +129,46 @@ namespace ProceduralStructures {
             return Vector3.Dot(Vector3.Cross(v1-v0, v2-v0), point-v0) > 0; //Face.Epsilon;
         }
 
-        public bool SharesEdgeWith(Triangle other) {
+        public int GetCommonVertices(Triangle other) {
             int commonVertices = 0;
             foreach (Vertex v in GetVertices()) {
                 foreach (Vertex w in other.GetVertices()) {
-                    if (v == w) {
+                    if (v.Equals(w)) {
                         commonVertices++;
                     }
                 }
             }
-            return commonVertices == 2;
+            return commonVertices;
         }
 
+        public bool SharesEdgeWith(Triangle other) {
+            return GetCommonVertices(other) == 2;
+        }
+
+        public List<TEdge> GetNonManifoldEdges() {
+            List<TEdge> result = new List<TEdge>();
+            List<Triangle> v0v1 = v0.triangles.FindAll(t => v1.triangles.Contains(t));
+            List<Triangle> v1v2 = v1.triangles.FindAll(t => v2.triangles.Contains(t));
+            List<Triangle> v2v0 = v2.triangles.FindAll(t => v0.triangles.Contains(t));
+            if (v0v1.Count == 1) {
+                result.Add(new TEdge(v0, v1, this));
+            }
+            if (v1v2.Count == 1) {
+                result.Add(new TEdge(v1, v2, this));
+            }
+            if (v2v0.Count == 1) {
+                result.Add(new TEdge(v2, v0, this));
+            }
+            return result;
+        }
+
+        public float MaxAngle() {
+            float phi = Vector3.Angle(v1.pos-v0.pos, v2.pos-v0.pos);
+            phi = Mathf.Max(phi, Vector3.Angle(v2.pos-v1.pos, v0.pos-v1.pos));
+            phi = Mathf.Max(phi, Vector3.Angle(v1.pos-v2.pos, v0.pos-v2.pos));
+            return phi;
+        }
+        
         public void RemoveTriangleLinks() {
             v0.triangles.Remove(this);
             v1.triangles.Remove(this);
@@ -116,6 +179,43 @@ namespace ProceduralStructures {
             v0.SetTriangle(this);
             v1.SetTriangle(this);
             v2.SetTriangle(this);
+        }
+
+        public List<Triangle> GetAdjacentTriangles() {
+            HashSet<Triangle> result = new HashSet<Triangle>();
+            v0.triangles.ForEach(t => result.Add(t));
+            v1.triangles.ForEach(t => result.Add(t));
+            v2.triangles.ForEach(t => result.Add(t));
+            result.Remove(this);
+            return new List<Triangle>(result);
+        }
+
+        public List<Triangle> GetAdjacentPlanarTriangles(float tolerance = 1f) {
+            HashSet<Triangle> result = new HashSet<Triangle>();
+            Vector3 n = normal;
+            v0.triangles.ForEach(t => result.Add(t));
+            v1.triangles.ForEach(t => result.Add(t));
+            v2.triangles.ForEach(t => result.Add(t));
+            result.Remove(this);
+            result.RemoveWhere( t => Vector3.Angle(t.normal, n) > tolerance);
+            return new List<Triangle>(result);
+        }
+
+        public Triangle GetNearestAdjacentTriangleByNormal(float tolerance = 5f) {
+            List<Triangle> neighbors = GetAdjacentTriangles();
+            if (neighbors.Count == 0) return null;
+            int bestMatch = 0;
+            float minAngle = float.MaxValue;
+            for (int i = 0; i < neighbors.Count; i++) {
+                float angle = Vector3.Angle(neighbors[i].normal, normal);
+                if (angle < minAngle) {
+                    minAngle = angle;
+                    bestMatch = i;
+                }
+            }
+            if (minAngle <= tolerance)
+                return neighbors[bestMatch];
+            return null;
         }
 
         public void SetUVProjected(float uvScale) {
@@ -208,7 +308,7 @@ namespace ProceduralStructures {
 
         public override string ToString()
         {
-            return string.Format("T{0}[{1},{2},{3}]", id, v0, v1, v2);
+            return string.Format("T{0}[{1},{2},{3}]", GetHashCode(), v0, v1, v2);
         }
     }
 }

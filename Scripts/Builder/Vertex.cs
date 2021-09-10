@@ -1,9 +1,9 @@
-using System.Collections;
+using System;
 using System.Collections.Generic;
 using UnityEngine;
 
 namespace ProceduralStructures {
-    public class Vertex {
+    public class Vertex : IEquatable<Vertex> {
         public int id;
         public Vector3 pos;
         public List<Triangle> triangles = new List<Triangle>();
@@ -15,6 +15,20 @@ namespace ProceduralStructures {
             if (!triangles.Contains(triangle)) {
                 triangles.Add(triangle);
             }
+        }
+
+        public bool Equals(Vertex obj) {
+            return MeshObject.SameInTolerance(pos, obj.pos);
+        }
+
+        public override int GetHashCode() {
+            return pos.x.GetHashCode() + 3 * pos.y.GetHashCode() + 5 * pos.z.GetHashCode();
+        }
+
+        public override bool Equals(object obj)
+        {
+            if (obj != null && obj is Vertex) return this.Equals(obj as Vertex);
+            return false;
         }
 
         public override string ToString()

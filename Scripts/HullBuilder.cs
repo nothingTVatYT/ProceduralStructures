@@ -19,6 +19,7 @@ public class HullBuilder : MonoBehaviour {
     public bool decimateVertices = false;
     public int maxVertices = 6;
     public Material debugMaterial;
+    public VertexListRecorder recorder;
 
 
     void Start()
@@ -39,10 +40,15 @@ public class HullBuilder : MonoBehaviour {
         ConvexBody body = new ConvexBody();
         body.uvScale = uvScale;
         body.transform = transform;
+        // set this early for debugging
+        body.recorder = recorder;
+        body.targetGameObject = hullRoot;
+        body.material = material;
         for (int i = 0; i < wrappedObject.transform.childCount; i++) {
             Transform tf = wrappedObject.transform.GetChild(i);
             HouseBuilder[] houseBuilders = tf.gameObject.GetComponentsInChildren<HouseBuilder>();
-            if (houseBuilders != null) {
+            BoxCollider[] boxColliders = tf.gameObject.GetComponentsInChildren<BoxCollider>();
+            if (houseBuilders != null && houseBuilders.Length > 0) {
                 foreach (HouseBuilder houseBuilder in houseBuilders) {
                     if (!ignoreInactive || houseBuilder.gameObject.activeInHierarchy) {
                         foreach (Vector3 v in GetCorners(houseBuilder.calculateCenter(), houseBuilder.calculateSize())) {
@@ -50,9 +56,7 @@ public class HullBuilder : MonoBehaviour {
                         }
                     }
                 }
-            }
-            BoxCollider[] boxColliders = tf.gameObject.GetComponentsInChildren<BoxCollider>();
-            if (boxColliders != null) {
+            } else if (boxColliders != null && boxColliders.Length > 0) {
                 foreach (BoxCollider boxCollider in boxColliders) {
                     if (!ignoreInactive || boxCollider.gameObject.activeInHierarchy) {
                         foreach (Vector3 v in GetCorners(boxCollider.center, boxCollider.size)) {
@@ -61,9 +65,10 @@ public class HullBuilder : MonoBehaviour {
                     }
                 }
             } else {
-                body.AddPoint(tf.position);
+                body.AddPoint(transform.InverseTransformPoint(tf.position));
             }
         }
+
         if (randomizeVertices) {
             body.RandomizeVertices(randomDisplacement);
         }
