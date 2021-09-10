@@ -18,7 +18,6 @@ public class HullBuilder : MonoBehaviour {
     public CaveBuilderComponent connectedCave;
     public bool decimateVertices = false;
     public int maxVertices = 6;
-    public Material debugMaterial;
 
     public void Rebuild() {
         ConvexHull body = new ConvexHull();
@@ -67,7 +66,6 @@ public class HullBuilder : MonoBehaviour {
                 other.Decimate(maxVertices);
             }
             other.targetGameObject = hullRoot;
-            other.material = debugMaterial;
             body.AddConnector(other);
         }
 

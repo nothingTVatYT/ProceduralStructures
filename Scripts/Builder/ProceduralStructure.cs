@@ -189,7 +189,11 @@ namespace ProceduralStructures {
                     tunnelObject.transform.localRotation = Quaternion.identity;
                     tunnelObject.isStatic = target.isStatic;
                 }
+                DebugStopwatch stopwatch = new DebugStopwatch();
+                stopwatch.Start("RebuildCave");
                 RebuildCave(cave, tunnel, tunnelObject);
+                stopwatch.Stop();
+                Debug.Log(stopwatch);
             }
         }
 
@@ -238,7 +242,10 @@ namespace ProceduralStructures {
             Vector3 previousDirection = Vector3.zero;
             int idx = 0;
             float uOffset = 0;
+            DebugStopwatch sw = new DebugStopwatch();
+            DebugStopwatch sw2 = new DebugStopwatch();
             foreach (Tangent tangent in cave.GetTangents(tunnel)) {
+                sw.Start("segment #" + idx);
                 Vector3 localPos = tangent.position - target.transform.position;
                 Quaternion localRotation = Quaternion.LookRotation(tangent.direction, Vector3.up);
                 Vector3 localScale = new Vector3(tangent.scaleWidth, tangent.scaleHeight, 1f);
@@ -259,7 +266,9 @@ namespace ProceduralStructures {
                         //Debug.LogFormat("plane({0},{1}), current {2}, previous {3}", plane, planeNormal, currentEdgeLoop.Elements(), previousEdgeLoop.Elements());
                         cavemesh.ClampToPlane(currentEdgeLoop, previousEdgeLoop, plane, planeNormal);
                     }
+                    sw2.Start("BridgeEdgeLoops");
                     int[] generatedTriangles = cavemesh.BridgeEdgeLoops(previousEdgeLoop, currentEdgeLoop, cave.uvScale);
+                    sw2.Stop();
                     //Builder.SetUVCylinderProjection(generatedFaces, plane + Vector3.up * cave.baseHeight/2, planeNormal, uOffset, cave.uvScale);
                     Vector3 cylinderCenter = cavemesh.GetCenter(currentEdgeLoop); //(cavemesh.GetCenter(currentEdgeLoop) + cavemesh.GetCenter(previousEdgeLoop))/2;
                     cavemesh.SetUVCylinderProjection(generatedTriangles, cylinderCenter, planeNormal, uOffset, cave.uvScale);
@@ -278,8 +287,14 @@ namespace ProceduralStructures {
                     previousEdgeLoop = currentEdgeLoop;
                 }
                 uOffset += (previousPosition - localPos).magnitude;
+                sw.Stop();
+                if (idx % 10 == 0) {
+                    Debug.Log(sw);
+                    Debug.Log(sw2);
+                }
                 idx++;
             }
+            Debug.Log(sw);
             // this is the last crosscut
             if (cave.closeEnd && previousEdgeLoop != null) {
                 int[] fanTriangles = cavemesh.CreateTriangleFan(previousEdgeLoop);
@@ -289,7 +304,9 @@ namespace ProceduralStructures {
                 cavemesh.RandomizeVertices(cave.randomDisplacement);
             }
             cavemesh.shading = cave.shading;
+            DebugStopwatch stopwatch = new DebugStopwatch().Start("Build");
             cavemesh.Build(target, cave.material);
+            Debug.Log(stopwatch.Stop());
         }
 
         public List<Vector3> SmoothVertices(List<Vector3> l) {

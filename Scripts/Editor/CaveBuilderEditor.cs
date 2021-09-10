@@ -1,5 +1,7 @@
+using System;
 using UnityEngine;
 using UnityEditor;
+using Debug = UnityEngine.Debug;
 
 namespace ProceduralStructures {
     [CustomEditor(typeof(CaveBuilderComponent))]
@@ -9,6 +11,8 @@ namespace ProceduralStructures {
             CaveBuilderComponent caveBuilder = target as CaveBuilderComponent;
             DrawDefaultInspector();
             if (GUILayout.Button("Update")) {
+                DebugStopwatch stopwatch = new DebugStopwatch();
+                stopwatch.Start("Generate cave");
                 if (caveBuilder.generatedMeshParent == null) {
                     GameObject go = new GameObject("generatedMesh");
                     go.transform.parent = caveBuilder.gameObject.transform;
@@ -21,6 +25,8 @@ namespace ProceduralStructures {
                 caveBuilder.UpdateWayPoints();
                 ProceduralStructure ps = new ProceduralStructure();
                 ps.RebuildCave(caveBuilder.caveDefinition, caveBuilder.generatedMeshParent);
+                stopwatch.Stop();
+                Debug.Log(stopwatch);
             }
         }
     }

@@ -99,6 +99,9 @@ namespace ProceduralStructures {
 
         public int AddTriangle(Vertex v0, Vertex v1, Vertex v2) {
             Triangle triangle = new Triangle(v0, v1, v2);
+            // checking for duplicates takes way too long
+            // if this is necessary, triangles has to become a HashSet
+            /*
             Triangle duplicate = triangles.Find(t => t.Equals(triangle));
             if (duplicate != null) {
                 Debug.LogWarning("Refuse to add a duplicated triangle " + triangle);
@@ -109,6 +112,8 @@ namespace ProceduralStructures {
                 // for visualizing only
                 triangle.SetUVProjected(uvScale);
             }
+            */
+            triangles.Add(triangle);
             return triangles.Count-1;
         }
 
@@ -593,8 +598,6 @@ namespace ProceduralStructures {
             cutObject.CreateTriangleFan(toVertices);
             cutObject.FlipNormals(cutObject.CreateTriangleFan(fromVertices));
 
-            
-            //cutObject.Build(other.targetGameObject, other.material);
             List<Vertex> outerVertices = RemoveEverythingInside(cutObject);
             int[] createdTriangles = FillPolygon(outerVertices, addedVertices);
             newVertices.Reverse();
