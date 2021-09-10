@@ -1,4 +1,3 @@
-using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 using ProceduralStructures;
@@ -15,35 +14,23 @@ public class HullBuilder : MonoBehaviour {
 
     public bool randomizeVertices = false;
     public Vector3 randomDisplacement;
+    public bool addConnector = false;
     public CaveBuilderComponent connectedCave;
     public bool decimateVertices = false;
     public int maxVertices = 6;
     public Material debugMaterial;
-    public VertexListRecorder recorder;
-
-
-    void Start()
-    {
-        
-    }
-
-    void Update()
-    {
-        
-    }
 
     public void Rebuild() {
+        ConvexHull body = new ConvexHull();
+        body.uvScale = uvScale;
+        body.transform = transform;
+        // set this early for debugging
+        body.targetGameObject = hullRoot;
+        body.material = material;
         GameObject wrappedObject = toEnclose;
         if (wrappedObject == null) {
             wrappedObject = gameObject;
         }
-        ConvexBody body = new ConvexBody();
-        body.uvScale = uvScale;
-        body.transform = transform;
-        // set this early for debugging
-        body.recorder = recorder;
-        body.targetGameObject = hullRoot;
-        body.material = material;
         for (int i = 0; i < wrappedObject.transform.childCount; i++) {
             Transform tf = wrappedObject.transform.GetChild(i);
             HouseBuilder[] houseBuilders = tf.gameObject.GetComponentsInChildren<HouseBuilder>();
@@ -69,10 +56,12 @@ public class HullBuilder : MonoBehaviour {
             }
         }
 
+        body.CalculateHull();
+
         if (randomizeVertices) {
             body.RandomizeVertices(randomDisplacement);
         }
-        if (connectedCave != null) {
+        if (addConnector && connectedCave != null) {
             MeshObject other = connectedCave.caveDefinition.GetConnection(connectedCave.gameObject.transform, 1, 0);
             if (decimateVertices) {
                 other.Decimate(maxVertices);

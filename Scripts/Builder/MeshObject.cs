@@ -904,8 +904,13 @@ namespace ProceduralStructures {
             return n;
         }
         
+        public virtual void PrepareForBuild() {
+
+        }
+
         public void Build(GameObject target, Material material) {
-                        GameObject childByMaterial = null;
+            PrepareForBuild();
+            GameObject childByMaterial = null;
             if (material == null) {
                 material = new Material(Shader.Find("Standard"));
             }
