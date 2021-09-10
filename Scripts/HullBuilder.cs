@@ -1,8 +1,19 @@
+using System;
 using System.Collections.Generic;
 using UnityEngine;
 using ProceduralStructures;
 
 public class HullBuilder : MonoBehaviour {
+
+    [Serializable]
+    public class MeshConnector {
+        public enum Side { Beginning, End }
+        public CaveBuilderComponent connectedCave;
+        public int tunnelIndex = 0;
+        public Side side = Side.Beginning;
+        public bool decimateVertices = false;
+        public int maxVertices = 6;
+    }
 
     public GameObject hullRoot;
     public GameObject toEnclose;
@@ -11,13 +22,10 @@ public class HullBuilder : MonoBehaviour {
     public Material material;
     public float uvScale = 1;
     public MeshObject.Shading shading = MeshObject.Shading.Flat;
-
     public bool randomizeVertices = false;
     public Vector3 randomDisplacement;
     public bool addConnector = false;
-    public CaveBuilderComponent connectedCave;
-    public bool decimateVertices = false;
-    public int maxVertices = 6;
+    public MeshConnector connection;
 
     public void Rebuild() {
         ConvexHull body = new ConvexHull();
@@ -60,10 +68,11 @@ public class HullBuilder : MonoBehaviour {
         if (randomizeVertices) {
             body.RandomizeVertices(randomDisplacement);
         }
-        if (addConnector && connectedCave != null) {
-            MeshObject other = connectedCave.caveDefinition.GetConnection(connectedCave.gameObject.transform, 1, 0);
-            if (decimateVertices) {
-                other.Decimate(maxVertices);
+        if (addConnector && connection != null && connection.connectedCave != null) {
+            float side = connection.side == MeshConnector.Side.Beginning ? 0 : 1;
+            MeshObject other = connection.connectedCave.caveDefinition.GetConnection(connection.tunnelIndex, side);
+            if (connection.decimateVertices) {
+                other.Decimate(connection.maxVertices);
             }
             other.targetGameObject = hullRoot;
             body.AddConnector(other);

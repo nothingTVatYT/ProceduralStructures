@@ -64,14 +64,13 @@ namespace ProceduralStructures {
             return spline.GetTangent(t);
         }
 
-        public MeshObject GetConnection(Transform transform, int index, float where) {
+        public MeshObject GetConnection(int index, float where) {
             BezierSpline bezier = new BezierSpline(wayPointLists[index].wayPoints);
             Vector3 center = bezier.GetVertex(where);
             Tangent direction = bezier.GetTangent(where);
             ProceduralStructure ps = new ProceduralStructure();
             MeshObject connectionObject =
             ps.GetCaveConnection(this, center, direction);
-            //connectionObject.transform = transform;
             return connectionObject;
         }
     }
