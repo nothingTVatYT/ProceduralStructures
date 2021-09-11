@@ -60,6 +60,7 @@ namespace ProceduralStructures {
                         }
                         GameObject marker1 = InstanceFromPlaceholder(placeholder);
                         generated.Add(marker1);
+                        marker1.name = street.name + " " + number + " (" + marker1.name + ")";
                         marker1.transform.parent = city.parent.transform;
                         marker1.transform.position = pos;
                         marker1.transform.rotation = Quaternion.LookRotation(normal * side);
