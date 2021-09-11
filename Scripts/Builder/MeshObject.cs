@@ -89,6 +89,14 @@ namespace ProceduralStructures {
             return result;
         }
 
+        public List<Vector3> PointList() {
+            List<Vector3> result = new List<Vector3>(vertices.Count);
+            foreach (Vertex v in vertices) {
+                result.Add(v.pos);
+            }
+            return result;
+        }
+
         public List<Triangle> TriangleList(IEnumerable<int> l) {
             List<Triangle> result = new List<Triangle>();
             foreach (int i in l) {
@@ -650,6 +658,9 @@ namespace ProceduralStructures {
             }
 
             outerVertices.RemoveWhere(v => v.triangles.Count == 0);
+            if (outerVertices.Count == 0) {
+                Debug.LogWarning("There was nothing to remove inside the cutting object");
+            }
             List<Vertex> ov = new List<Vertex>(outerVertices);
             return SortConnectedVertices(ov);
         }

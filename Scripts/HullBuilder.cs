@@ -63,19 +63,32 @@ public class HullBuilder : MonoBehaviour {
             }
         }
 
+        MeshObject connectedObject = null;
+        if (addConnector && connection != null && connection.connectedCave != null) {
+            float side = connection.side == MeshConnector.Side.Beginning ? 0 : 1;
+            connectedObject = connection.connectedCave.caveDefinition.GetConnection(connection.tunnelIndex, side);
+            if (connection.decimateVertices) {
+                connectedObject.Decimate(connection.maxVertices);
+            }
+            connectedObject.targetGameObject = hullRoot;
+            Vector3 displacement = 0.1f * (transform.position - connection.connectedCave.transform.position);
+            //body.AddPoint(connectedObject.GetCenter());
+            List<Vector3> connectorPoints = connectedObject.PointList();
+            Vector3 connectorCenter = Builder.FindCentroid(connectorPoints);
+            //body.AddPoint(body.LocalPosition(connectedObject.WorldPosition(connectorCenter) + displacement*0.8f));
+            // foreach (Vector3 v in connectedObject.PointList()) {
+            //     body.AddPoint(body.LocalPosition(connectedObject.WorldPosition(v) + displacement));
+            // }
+        }
+
         body.CalculateHull();
 
         if (randomizeVertices) {
             body.RandomizeVertices(randomDisplacement);
         }
-        if (addConnector && connection != null && connection.connectedCave != null) {
-            float side = connection.side == MeshConnector.Side.Beginning ? 0 : 1;
-            MeshObject other = connection.connectedCave.caveDefinition.GetConnection(connection.tunnelIndex, side);
-            if (connection.decimateVertices) {
-                other.Decimate(connection.maxVertices);
-            }
-            other.targetGameObject = hullRoot;
-            body.AddConnector(other);
+
+        if (connectedObject != null) {
+            body.AddConnector(connectedObject);
         }
 
         if (flipNormals) {
