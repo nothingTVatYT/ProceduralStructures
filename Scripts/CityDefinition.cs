@@ -27,7 +27,9 @@ namespace ProceduralStructures {
 
         [Serializable]
         public class Street {
+            [Tooltip("Name of the street for address labels, parent of waypoints will be used if available")]
             public string name;
+            [Tooltip("The (estimated) length of the street will be calculated")]
             public float length;
             [Tooltip("Distance from the middle of the street to the front of the house")]
             public float doorToStreet = 3.5f;
@@ -37,12 +39,17 @@ namespace ProceduralStructures {
             public bool abandonLeft = false;
             [Tooltip("Inhibit houses on the right side of the street")]
             public bool abandonRight = false;
+            [HideInInspector]
             public List<Tangent> tangents;
             [HideInInspector]
             public List<Vector3> points;
+            [Tooltip("Use a bezier spline instead of straight lines between waypoints")]
             public bool smoothCurve;
+            [Tooltip("Use the below node as a parent of waypoints")]
             public bool useChildNodes;
+            [Tooltip("Use all child nodes of this transform as waypoints")]
             public GameObject transformsParent;
+            [Tooltip("Define single waypoints instead of the parent above")]
             public List<Transform> transforms;
         }
         [Serializable]
