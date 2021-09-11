@@ -1,16 +1,41 @@
-using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 using Random = UnityEngine.Random;
+using ExtensionMethods;
 
 namespace ProceduralStructures {
     public class CityBuilder {
 
+        public void UpdateStreets(CityDefinition city) {
+            foreach (CityDefinition.Street street in city.streets) {
+                UpdateStreetsPoints(street);
+            }
+        }
+
+        public void UpdateHousePrefabs(CityDefinition city) {
+            city.housePlaceholders.Clear();
+            foreach (GameObject go in city.houses) {
+                HouseDefinition hd = go.GetComponent<HouseBuilder>().houseDefinition;
+                city.housePlaceholders.Add(new CityDefinition.HousePlaceholder(hd, go));
+            }
+            foreach (HouseDefinition houseDef in city.houseDefinitions) {
+                city.housePlaceholders.Add(new CityDefinition.HousePlaceholder(houseDef, null));
+            }
+        }
+
         public void PlaceHouses(CityDefinition city) {
             Random.InitState(city.seed);
-
+            Terrain currentTerrain = city.terrain;
+            if (currentTerrain == null) {
+                currentTerrain = Terrain.activeTerrain;
+            }
+            UpdateStreets(city);
+            UpdateHousePrefabs(city);
             List<GameObject> generated = new List<GameObject>();
             foreach (CityDefinition.Street street in city.streets) {
+                if (street.name == "" && street.transformsParent != null) {
+                    street.name = street.transformsParent.name;
+                }
 
                 float streetLength = street.length;
 
@@ -21,21 +46,19 @@ namespace ProceduralStructures {
                     if (side > 0) number++;
                     float rightOffset = street.houseToHouse;
                     while (rightOffset < streetLength) {
-                        GameObject prefab = RandomHouse(city);
-                        HouseDefinition houseDefinition = prefab.GetComponent<HouseBuilder>().houseDefinition;
+                        CityDefinition.HousePlaceholder placeholder = RandomHouse(city);
+                        HouseDefinition houseDefinition = placeholder.houseDefinition;
+                        float offset = rightOffset + houseDefinition.width/2;
+                        Tangent tangent = GetStreetTangentAt(street, offset);
                         // this points to the right of the streets beginning looking towards the end
-                        float segmentStart = 0;
-                        Vector3[] segment = GetStreetSegmentAt(street, rightOffset, out segmentStart);
-                        Vector3 normal = GetStreetNormalAt(segment);
-                        Vector3 pos = segment[0] + normal * (houseDefinition.length/2 + street.doorToStreet) * side
-                            + (segment[1]-segment[0]).normalized * (houseDefinition.width/2 + rightOffset - segmentStart);
+                        Vector3 normal = Vector3.Cross(Vector3.up, tangent.direction);
+                        Vector3 pos = tangent.position + normal * (houseDefinition.length/2 + street.doorToStreet) * side;
                         rightOffset += street.houseToHouse + houseDefinition.width;
-                        if (rightOffset > streetLength) {
-                            break;
-                        }
                         Vector3 frontCenter = pos - normal * houseDefinition.length/2 * side;
-                        pos.y = Terrain.activeTerrain.SampleHeight(frontCenter) + city.yOffset;
-                        GameObject marker1 = GameObject.Instantiate(prefab);
+                        if (currentTerrain != null) {
+                            pos.y = Terrain.activeTerrain.SampleHeight(frontCenter) + city.yOffset;
+                        }
+                        GameObject marker1 = InstanceFromPlaceholder(placeholder);
                         generated.Add(marker1);
                         marker1.transform.parent = city.parent.transform;
                         marker1.transform.position = pos;
@@ -44,7 +67,8 @@ namespace ProceduralStructures {
                         HouseBuilder hb = marker1.GetComponent<HouseBuilder>();
                         hb.streetName = street.name;
                         hb.number = number;
-                        number+=2;
+                        number++;
+                        if (!street.abandonLeft && !street.abandonRight) number++;
                     }
                 }
             }
@@ -108,8 +132,100 @@ namespace ProceduralStructures {
             }
         }
 
-        GameObject RandomHouse(CityDefinition city) {
-            return city.houses[Random.Range(0, city.houses.Count)];
+        void UpdateStreetsPoints(CityDefinition.Street street) {
+            if (street.useChildNodes && street.transformsParent != null) {
+                List<Transform> transforms = new List<Transform>();
+                for (int i = 0; i < street.transformsParent.transform.childCount; i++) {
+                    transforms.Add(street.transformsParent.transform.GetChild(i));
+                }
+                UpdateStreetsPointsFromTransforms(street, transforms);
+            } else if (street.transforms != null) {
+                UpdateStreetsPointsFromTransforms(street, street.transforms);
+            }
+        }
+
+        void UpdateStreetsPointsFromTransforms(CityDefinition.Street street, List<Transform> transforms) {
+            street.points.Clear();
+            street.tangents.Clear();
+            street.length = 0;
+            if (transforms.Count > 0) {
+                if (street.smoothCurve) {
+                    List<WayPoint> wayPoints = new List<WayPoint>();
+                    foreach (Transform tr in transforms) {
+                        wayPoints.Add(new WayPoint(tr.position));
+                    }
+                    BezierSpline spline = new BezierSpline(wayPoints);
+                    street.length = spline.EstimatedLength;
+                    Vector3 prev = spline.GetVertex(0);
+                    float t = 0;
+                    float uResolution = 5;
+                    float stepSize = uResolution / spline.EstimatedLength;
+                    while (t < (1f + stepSize)) {
+                        Tangent v = spline.GetTangent(t);
+                        t += stepSize;
+                        street.tangents.Add(v);
+                        street.points.Add(v.position);
+                    }
+                } else {
+                    Vector3 prev = transforms[0].position;
+                    for (int i = 0; i < transforms.Count; i++) {
+                        Vector3 pos = transforms[i].position;
+                        float segmentLength = (pos-prev).magnitude;
+                        street.length += segmentLength;
+                        street.points.Add(pos);
+                        street.tangents.Add(new Tangent(pos, Vector3.zero, street.length, transforms[i].localScale.x, transforms[i].localScale.y));
+                        prev = pos;
+                    }
+                    if (street.tangents.Count > 1) {
+                        for (int i = 0; i < street.tangents.Count; i++) {
+                            if (i == 0) {
+                                street.tangents[0].direction = (street.tangents[1].position - street.tangents[0].position).normalized;
+                            } else if (i < street.tangents.Count-1) {
+                                street.tangents[i].direction = (street.tangents[i+1].position - street.tangents[i].position).normalized;
+                            } else {
+                                street.tangents[i].direction = (street.tangents[i].position - street.tangents[i-1].position).normalized;
+                            }
+                            street.tangents[i].relativePosition /= street.length;
+                        }
+                    }
+                }
+            }
+        }
+
+        CityDefinition.HousePlaceholder RandomHouse(CityDefinition city) {
+            return city.housePlaceholders[Random.Range(0, city.housePlaceholders.Count)];
+        }
+
+        GameObject InstanceFromPlaceholder(CityDefinition.HousePlaceholder h) {
+            if (h.prefab != null) {
+                return GameObject.Instantiate(h.prefab);
+            }
+            GameObject go = new GameObject(h.houseDefinition.name);
+            go.AddComponent<HouseBuilder>().houseDefinition = h.houseDefinition;
+            return go;
+        }
+
+        Tangent GetStreetTangentAt(CityDefinition.Street street, float offset) {
+            if (street.tangents == null || street.tangents.Count == 0 || street.length == 0) {
+                return null;
+            }
+            float relativePosition = Mathf.Clamp01(offset / street.length);
+            Tangent tangent = street.tangents[0];
+            for (int i = 1; i < street.tangents.Count; i++) {
+                Tangent t = street.tangents[i];
+                if (t.relativePosition <= relativePosition) {
+                    tangent = t;
+                } else {
+                    // interpolate between (previous) tangent and this
+                    float f = (relativePosition - tangent.relativePosition) / (t.relativePosition - tangent.relativePosition);
+                    Tangent nt = Tangent.Lerp(tangent, t, f);
+                    if (!street.smoothCurve) {
+                        nt.direction = tangent.direction;
+                    }
+                    return nt;
+                }
+            }
+            return tangent;
         }
 
         Vector3[] GetStreetSegmentAt(CityDefinition.Street street, float offset, out float segmentStart) {
@@ -153,10 +269,10 @@ namespace ProceduralStructures {
             bool result = false;
             float hitDistance;
             Ray segmentRay = new Ray();
-            for (int i = 0; i < street.points.Count - 1; i++) {
-                Vector3 l = street.points[i+1] - street.points[i];
+            for (int i = 0; i < street.tangents.Count - 1; i++) {
+                Vector3 l = street.tangents[i+1].position - street.tangents[i].position;
                 float segmentLength = l.magnitude;
-                segmentRay.origin = transform.InverseTransformPoint(street.points[i]);
+                segmentRay.origin = transform.InverseTransformPoint(street.tangents[i].position);
                 segmentRay.direction = transform.InverseTransformDirection(l.normalized);
                 if (bounds.IntersectRay(segmentRay, out hitDistance)) {
                     if (hitDistance < segmentLength) {

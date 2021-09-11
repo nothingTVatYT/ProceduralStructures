@@ -1,5 +1,6 @@
 using UnityEngine;
 using System.Collections.Generic;
+using ExtensionMethods;
 
 namespace ProceduralStructures {
 	public class BezierSpline {
@@ -23,6 +24,13 @@ namespace ProceduralStructures {
 			GetCurveControlPoints(vectors, out controlPoints1, out controlPoints2);
 			for (int i = 0; i < points.Count-1; i++) {
 				estimatedSegmentLength[i] = EstimateSegmentLength(i, 10);
+				estimatedLength += estimatedSegmentLength[i];
+			}
+			float firstEstimation = estimatedLength;
+			estimatedLength = 0;
+			for (int i = 0; i < points.Count-1; i++) {
+				int st = Mathf.CeilToInt(estimatedSegmentLength[i] / firstEstimation * 10);
+				estimatedSegmentLength[i] = EstimateSegmentLength(i, st);
 				estimatedLength += estimatedSegmentLength[i];
 			}
 		}

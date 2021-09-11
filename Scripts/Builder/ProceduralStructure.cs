@@ -342,5 +342,30 @@ namespace ProceduralStructures {
             }
             return result;
         }
+
+        public static GameObject GetChildByName(GameObject parent, string name) {
+            for (int i = 0; i < parent.transform.childCount; i++) {
+                GameObject child = parent.transform.GetChild(i).gameObject;
+                if (child.name == name) {
+                    return child;
+                }
+            }
+            return null;
+        }
+
+        public static GameObject CreateEmptyChild(GameObject parent, string name) {
+            GameObject go = null;
+            if (name != "") {
+                go = GetChildByName(parent, name);
+                if (go != null) return go;
+            }
+            go = new GameObject(name);
+            go.transform.parent = parent.transform;
+            go.transform.localPosition = Vector3.zero;
+            go.transform.localRotation = Quaternion.identity;
+            go.transform.localScale = Vector3.one;
+            go.isStatic = parent.isStatic;
+            return go;
+        }
     }
 }
