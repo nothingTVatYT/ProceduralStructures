@@ -228,34 +228,6 @@ namespace ProceduralStructures {
             return tangent;
         }
 
-        Vector3[] GetStreetSegmentAt(CityDefinition.Street street, float offset, out float segmentStart) {
-            segmentStart = 0;
-            Vector3 a = street.points[0];
-            Vector3 b = street.points[1];
-            for (int index = 0; index < street.points.Count - 1; index++) {
-                a = street.points[index];
-                b = street.points[index+1];
-                float segmentLength = Vector3.Distance(a, b);
-                if (offset >= segmentStart && offset < (segmentStart + segmentLength)) {
-                    break;
-                }
-                segmentStart += segmentLength;
-            }
-            return new Vector3[] { a, b };
-        }
-
-        IEnumerable<Vector3[]> StreetSegments(CityDefinition.Street street) {
-            for (int index = 0; index < street.points.Count -1; index++) {
-                yield return new Vector3[] { street.points[index], street.points[index+1] };
-            }
-        }
-
-        Vector3 GetStreetNormalAt(Vector3[] segment) {
-            Vector3 a = segment[0];
-            Vector3 b = segment[1];
-            return Vector3.Cross(a-b, Vector3.up).normalized;
-        }
-
         bool BoundsIntersectsStreets(Transform transform, Bounds bounds, List<CityDefinition.Street> streets) {
             bool result = false;
             foreach (CityDefinition.Street street in streets) {
@@ -372,17 +344,10 @@ namespace ProceduralStructures {
         IEnumerable<Vector3> LocationOnStreet(CityDefinition.Street street, float stepSize) {
             float currentMark = 0;
             float streetLength = street.length;
-            float pastSegmentsLength = 0;
-            foreach (Vector3[] segment in StreetSegments(street)) {
-                float segmentMark = currentMark - pastSegmentsLength;
-                float segmentLength = (segment[1]-segment[0]).magnitude;
-                while (segmentMark <= segmentLength) {
-                    Vector3 pos = segment[0] + (segment[1]-segment[0]).normalized * segmentMark;
-                    currentMark += stepSize;
-                    segmentMark += stepSize;
-                    yield return pos;
-                }
-                pastSegmentsLength += segmentLength;
+            while (currentMark <= streetLength) {
+                Vector3 pos = GetStreetTangentAt(street, currentMark).position;
+                currentMark += stepSize;
+                yield return pos;
             }
         }
 
@@ -393,6 +358,7 @@ namespace ProceduralStructures {
                 }
             }
         }
+
         Vector2 WorldToTextureCoordinate(Vector3 position, Terrain terrain) {
             Vector3 localPosition = position - terrain.transform.position;
             float relativeX = localPosition.x / terrain.terrainData.size.x;
