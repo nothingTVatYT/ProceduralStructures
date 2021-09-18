@@ -18,7 +18,7 @@ public class HouseBuilderEditor : Editor {
         }
         if (GUILayout.Button("Remove Meshes")) {
             Undo.RegisterFullObjectHierarchyUndo(houseBuilder.gameObject, "Remove meshes");
-            new Building().ClearMeshes(houseBuilder.gameObject);
+            Building.ClearMeshes(houseBuilder.gameObject);
         }
     }
 

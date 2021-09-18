@@ -89,6 +89,11 @@ namespace ProceduralStructures {
             return result;
         }
 
+        public Vertex GetVertex(int idx) {
+            if (idx >= 0 && idx < vertices.Count) return vertices[idx];
+            return null;
+        }
+
         public List<Vector3> PointList() {
             List<Vector3> result = new List<Vector3>(vertices.Count);
             foreach (Vertex v in vertices) {
@@ -155,14 +160,133 @@ namespace ProceduralStructures {
 
         public void AddObject(MeshObject other) {
             foreach (Triangle t in other.triangles) {
-                Vertex v0 = vertices[AddUnique(t.v0.pos)];
-                Vertex v1 = vertices[AddUnique(t.v1.pos)];
-                Vertex v2 = vertices[AddUnique(t.v2.pos)];
+                Vertex v0 = vertices[AddUnique(other.WorldPosition(t.v0.pos))];
+                Vertex v1 = vertices[AddUnique(other.WorldPosition(t.v1.pos))];
+                Vertex v2 = vertices[AddUnique(other.WorldPosition(t.v2.pos))];
                 Triangle nt = triangles[AddTriangle(v0, v1, v2)];
                 nt.uv0 = t.uv0;
                 nt.uv1 = t.uv1;
                 nt.uv2 = t.uv2;
             }
+        }
+
+        public List<int> AddCube(Vector3 center, Vector3 extends, float uvScale = 1f) {
+            Vertex v0 = vertices[Add(center + new Vector3(-extends.x, -extends.y, -extends.z))];
+            Vertex v1 = vertices[Add(center + new Vector3(-extends.x, extends.y, -extends.z))];
+            Vertex v2 = vertices[Add(center + new Vector3(extends.x, extends.y, -extends.z))];
+            Vertex v3 = vertices[Add(center + new Vector3(extends.x, -extends.y, -extends.z))];
+            Vertex v4 = vertices[Add(center + new Vector3(-extends.x, -extends.y, extends.z))];
+            Vertex v5 = vertices[Add(center + new Vector3(-extends.x, extends.y, extends.z))];
+            Vertex v6 = vertices[Add(center + new Vector3(extends.x, extends.y, extends.z))];
+            Vertex v7 = vertices[Add(center + new Vector3(extends.x, -extends.y, extends.z))];
+            List<int> createdTriangles = new List<int>(12);
+            // front
+            createdTriangles.Add(AddTriangle(v0, v1, v2));
+            createdTriangles.Add(AddTriangle(v0, v2, v3));
+            // left
+            createdTriangles.Add(AddTriangle(v4, v5, v1));
+            createdTriangles.Add(AddTriangle(v4, v1, v0));
+            // right
+            createdTriangles.Add(AddTriangle(v3, v2, v6));
+            createdTriangles.Add(AddTriangle(v3, v6, v7));
+            // back
+            createdTriangles.Add(AddTriangle(v7, v6, v5));
+            createdTriangles.Add(AddTriangle(v7, v5, v4));
+            // top
+            createdTriangles.Add(AddTriangle(v1, v5, v6));
+            createdTriangles.Add(AddTriangle(v1, v6, v2));
+            // bottom
+            createdTriangles.Add(AddTriangle(v4, v0, v3));
+            createdTriangles.Add(AddTriangle(v4, v3, v7));
+            SetUVBoxProjection(createdTriangles, uvScale);
+            return createdTriangles;
+        }
+
+        public void CleanupMesh() {
+            HashSet<Triangle> toBeRemoved = new HashSet<Triangle>();
+            foreach (Triangle triangle in triangles) {
+                foreach (Triangle adjacent in triangle.GetAdjacentTriangles()) {
+                    if (Mathf.Abs(Vector3.Dot(triangle.normal, adjacent.normal) + 1f) < 1e-3f) {
+                        if (!triangle.SharesTurningEdge(adjacent)) {
+                            toBeRemoved.Add(triangle);
+                            toBeRemoved.Add(adjacent);
+                        }
+                    }
+                }
+            }
+            foreach (Triangle t in toBeRemoved) Remove(t);
+        }
+
+        public void RemoveInnerFaces() {
+            int trianglesNonManifold = 0;
+            List<Triangle> toBeRemoved = new List<Triangle>();
+            foreach (Triangle triangle in triangles) {
+                Triangle t = triangle.GetDuplicate();
+                if (t != null) {
+                    toBeRemoved.Add(triangle);
+                }
+            }
+            Debug.Log("duplicate triangles: " + toBeRemoved.Count);
+            toBeRemoved.ForEach(t => Remove(t));
+            foreach (Triangle triangle in triangles) {
+                List<TEdge> nonManifold = triangle.GetNonManifoldEdges();
+                if (nonManifold.Count > 0) {
+                    trianglesNonManifold++;
+                    foreach (TEdge edge in nonManifold) {
+                        DebugLocalEdge(edge.a.pos, edge.b.pos, Color.red);
+                    }
+                    Triangle hitTriangle;
+                    bool fromBack;
+                    Vector3 intersection;
+                    if (RayHitTriangle(triangle.center + triangle.normal*1e-3f, triangle.normal, false, out hitTriangle, out fromBack, out intersection)) {
+                        if (fromBack) {
+                            toBeRemoved.Add(triangle);
+                        }
+                    }
+                }
+            }
+            Debug.Log("non manifold triangles: " + trianglesNonManifold);
+            Debug.Log("triangles to be removed: " + toBeRemoved.Count);
+            toBeRemoved.ForEach(t => Remove(t));
+        }
+
+        public bool IsInnerFace(Triangle triangle) {
+            bool result = false;
+            Vector3 intersection;
+            float dist;
+            float nearestHit = float.MaxValue;
+            foreach (Triangle t in triangles) {
+                if (t != triangle) {
+                    if (GeometryTools.RayHitTriangle(triangle.center, triangle.normal, t.v0.pos, t.v2.pos, t.v1.pos, out intersection, out dist)) {
+                        if (dist < nearestHit) {
+                            nearestHit = dist;
+                        }
+                        result = true;
+                        break;
+                    }
+                }
+            }
+            return result;
+        }
+
+        public bool RayHitTriangle(Vector3 origin, Vector3 direction, bool ignoreFromBack, out Triangle triangleHit, out bool fromBack, out Vector3 intersection) {
+            fromBack = false;
+            float minDistance = float.MaxValue;
+            triangleHit = null;
+            bool triangleHitFromback = false;
+            intersection = Vector3.zero;
+            foreach (Triangle triangle in triangles) {
+                if (triangle.RayHit(origin, direction, ignoreFromBack, out fromBack, out intersection)) {
+                    float distance = (intersection-origin).magnitude;
+                    if (distance < minDistance) {
+                        minDistance = distance;
+                        triangleHit = triangle;
+                        triangleHitFromback = fromBack;
+                    }
+                }
+            }
+            fromBack = triangleHitFromback;
+            return triangleHit != null;
         }
 
         public bool SwapEdges(Triangle t1, Triangle t2) {
@@ -485,15 +609,39 @@ namespace ProceduralStructures {
             }
         }
 
-        public void SetUVBoxProjection(float uvScale) {
+        public void SetUVBoxProjection0(float uvScale) {
             foreach (Triangle triangle in triangles) {
                 triangle.SetUVProjected(uvScale);
+            }
+        }
+
+        public void SetUVBoxProjection(float uvScale) {
+            List<Face> connectedFaces = new List<Face>();
+            foreach (Triangle face in triangles) {
+                float dlr = Mathf.Abs(Vector3.Dot(face.normal, Vector3.left));
+                float dfb = Mathf.Abs(Vector3.Dot(face.normal, Vector3.back));
+                float dud = Mathf.Abs(Vector3.Dot(face.normal, Vector3.up));
+                face.uv0 = new Vector2((dlr*face.v0.pos.z + dfb*face.v0.pos.x + dud*face.v0.pos.x) * uvScale, (dlr*face.v0.pos.y + dfb*face.v0.pos.y + dud*face.v0.pos.z) * uvScale);
+                face.uv1 = new Vector2((dlr*face.v1.pos.z + dfb*face.v1.pos.x + dud*face.v1.pos.x) * uvScale, (dlr*face.v1.pos.y + dfb*face.v1.pos.y + dud*face.v1.pos.z) * uvScale);
+                face.uv2 = new Vector2((dlr*face.v2.pos.z + dfb*face.v2.pos.x + dud*face.v2.pos.x) * uvScale, (dlr*face.v2.pos.y + dfb*face.v2.pos.y + dud*face.v2.pos.z) * uvScale);
             }
         }
 
         public void SetUVBoxProjection(IEnumerable<int> l, float uvScale) {
             foreach (int i in l) {
                 triangles[i].SetUVProjected(uvScale);
+            }
+        }
+
+        public void Rotate(Quaternion rotation) {
+            foreach (Vertex v in vertices) {
+                v.pos = rotation * v.pos;
+            }
+        }
+
+        public void Translate(Vector3 offset) {
+            foreach (Vertex v in vertices) {
+                v.pos = v.pos + offset;
             }
         }
 
@@ -826,6 +974,10 @@ namespace ProceduralStructures {
             Vector3 start = a - (b-a).normalized * 10f;
             Vector3 end = b + (b-a).normalized * 10f;
             Debug.DrawLine(transform.TransformPoint(start), transform.TransformPoint(end), color, 5);
+        }
+
+        public void DebugLocalEdge(Vector3 a, Vector3 b, Color color) {
+            Debug.DrawLine(transform.TransformPoint(a), transform.TransformPoint(b), color, 5);
         }
 
         public void DebugLocalVector(Vector3 a, Vector3 direction, Color color) {

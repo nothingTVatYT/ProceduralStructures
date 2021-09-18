@@ -6,6 +6,7 @@ namespace ProceduralStructures {
 
         public delegate void ExcludeFromNavmesh(GameObject gameObject);
         public ExcludeFromNavmesh excludeFromNavmesh;
+        SharedMeshLibrary meshLibrary;
 
         class QueuedMakeHole {
             public QueuedMakeHole(Vector3 origin, Vector3 direction, Vector3 up, float width, float height, Material material, float maxDistance = 0) {
@@ -34,9 +35,44 @@ namespace ProceduralStructures {
             }
         }
 
+        public ProceduralHouse() {
+            meshLibrary = null;
+        }
+
+        public ProceduralHouse(SharedMeshLibrary meshLibrary) {
+            this.meshLibrary = meshLibrary;
+        }
+
+        public void BuildHouseWithInterior(HouseDefinition house, GameObject target, ProceduralStructureCache cache) {
+            string key = house.name + "-LOD0";
+            if (cache.ContainsKey(key)) {
+                cache.InstantiateGameObject(key, target, "LOD0");
+                cache.InstantiateGameObject(house.name + "-" + Building.ADDED_INTERIOR, target, Building.ADDED_INTERIOR);
+            } else {
+                RebuildHouseWithInterior(house, target, 0);
+                cache.AddPrefab(key, Building.GetChildByName(target, "LOD0"));
+                GameObject add0 = Building.GetChildByName(target, Building.ADDED_INTERIOR);
+                if (add0 != null) {
+                    cache.AddPrefab(house.name + "-" + Building.ADDED_INTERIOR, add0);
+                }
+            }
+            key = house.name + "-LOD1";
+            if (cache.ContainsKey(key)) {
+                cache.InstantiateGameObject(key, target, "LOD1");
+            } else {
+                RebuildHouseWithInterior(house, target, 1);
+                cache.AddPrefab(key, Building.GetChildByName(target, "LOD1"));
+            }
+            SetupLOD(house, target);
+        }
+
         public void RebuildHouseWithInterior(HouseDefinition house, GameObject target) {
             RebuildHouseWithInterior(house, target, 0);
             RebuildHouseWithInterior(house, target, 1);
+            SetupLOD(house, target);
+        }
+
+        void SetupLOD(HouseDefinition house, GameObject target) {
             LODGroup lodGroup = target.GetComponent<LODGroup>();
             if (lodGroup == null) {
                 lodGroup = target.AddComponent<LODGroup>();

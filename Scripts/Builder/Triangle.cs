@@ -63,7 +63,7 @@ namespace ProceduralStructures {
         }
 
         public bool Equals(Triangle other) {
-            return GetCommonVertices(other) == 3;
+            return GetCommonVertices(other) == 3 && normal == other.normal;
         }
 
         public override bool Equals(object obj)
@@ -141,6 +141,33 @@ namespace ProceduralStructures {
             return commonVertices;
         }
 
+        public bool SharesTurningEdge(Triangle other) {
+            int commonVertices = 0;
+            int midx = 0;
+            int oidx = 0;
+            Vertex[] mv = GetVertices();
+            Vertex[] ov = other.GetVertices();
+            for (int i = 0; i < 3; i++) {
+                for (int j = 0; j < 3; j++) {
+                    if (mv[i].Equals(ov[j])) {
+                        commonVertices++;
+                        if (commonVertices < 2) {
+                            midx = i;
+                            oidx = j;
+                        } else {
+                            if (i == midx+1 && j == (oidx+1) % 3) {
+                                return true;
+                            }
+                            if (i == midx+2 && j == (oidx+2) % 3) {
+                                return true;
+                            }
+                        }
+                    }
+                }
+            }
+            return false;
+        }
+
         public bool SharesEdgeWith(Triangle other) {
             return GetCommonVertices(other) == 2;
         }
@@ -150,13 +177,13 @@ namespace ProceduralStructures {
             List<Triangle> v0v1 = v0.triangles.FindAll(t => v1.triangles.Contains(t));
             List<Triangle> v1v2 = v1.triangles.FindAll(t => v2.triangles.Contains(t));
             List<Triangle> v2v0 = v2.triangles.FindAll(t => v0.triangles.Contains(t));
-            if (v0v1.Count == 1) {
+            if (v0v1.Count != 2) {
                 result.Add(new TEdge(v0, v1, this));
             }
-            if (v1v2.Count == 1) {
+            if (v1v2.Count != 2) {
                 result.Add(new TEdge(v1, v2, this));
             }
-            if (v2v0.Count == 1) {
+            if (v2v0.Count != 2) {
                 result.Add(new TEdge(v2, v0, this));
             }
             return result;
@@ -183,9 +210,8 @@ namespace ProceduralStructures {
 
         public List<Triangle> GetAdjacentTriangles() {
             HashSet<Triangle> result = new HashSet<Triangle>();
-            v0.triangles.ForEach(t => result.Add(t));
-            v1.triangles.ForEach(t => result.Add(t));
-            v2.triangles.ForEach(t => result.Add(t));
+            v0.triangles.ForEach(t => { if (v1.triangles.Contains(t) || v2.triangles.Contains(t)) result.Add(t); });
+            v1.triangles.ForEach(t => { if (v2.triangles.Contains(t)) result.Add(t); });
             result.Remove(this);
             return new List<Triangle>(result);
         }

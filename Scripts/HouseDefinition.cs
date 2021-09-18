@@ -56,6 +56,7 @@ public class HouseDefinition : ScriptableObject
     public float heightOffset = -2;
     public float width = 9;
     public float length = 6;
+    public bool constructFrameHouse;
  
     public List<BuildingStructure> layers = new List<BuildingStructure>();
 

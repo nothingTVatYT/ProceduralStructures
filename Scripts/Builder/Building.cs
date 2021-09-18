@@ -108,7 +108,7 @@ namespace ProceduralStructures {
             meshCollider.sharedMesh = mesh;
         }
 
-        public void ClearMeshes(GameObject target) {
+        public static void ClearMeshes(GameObject target) {
             for (int i = target.transform.childCount-1; i>=0; i--) {
                 GameObject go = target.transform.GetChild(i).gameObject;
                 if (namesOfGeneratedObjects.Contains(go.name)) {

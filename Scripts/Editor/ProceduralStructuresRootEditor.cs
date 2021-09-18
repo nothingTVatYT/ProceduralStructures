@@ -1,23 +1,23 @@
 using UnityEngine;
 using UnityEditor;
+using ProceduralStructures;
 
 [CustomEditor(typeof(ProceduralStructuresRoot))]
-public class ProceduralStructuresRootEditor : Editor
-{
+public class ProceduralStructuresRootEditor : Editor {
     public override void OnInspectorGUI() {
         DrawDefaultInspector();
         ProceduralStructuresRoot root = (ProceduralStructuresRoot)target;
         if (GUILayout.Button("Rebuild all in hierarchy starting here")) {
             HouseBuilder[] builder = root.gameObject.GetComponentsInChildren<HouseBuilder>();
+            ProceduralStructureCache meshCache = new ProceduralStructureCache();
 
             if (builder != null && builder.Length > 0) {
                 Debug.Log("Found " + builder.Length + " house builders.");
-                ProceduralStructures.ProceduralHouse p = new ProceduralStructures.ProceduralHouse();
+                ProceduralHouse p = new ProceduralHouse();
                 p.excludeFromNavmesh += ExcludeFromNavmesh;
-                ProceduralStructures.Building building = new ProceduralStructures.Building();
                 foreach (HouseBuilder h in builder) {
                     Undo.RegisterFullObjectHierarchyUndo(h.gameObject, "Rebuild structures");
-                    building.ClearMeshes(h.gameObject);
+                    Building.ClearMeshes(h.gameObject);
                     p.RebuildHouseWithInterior(h.houseDefinition, h.gameObject);
                 }
             } else {
@@ -30,10 +30,9 @@ public class ProceduralStructuresRootEditor : Editor
 
             if (builder != null && builder.Length > 0) {
                 Debug.Log("Found " + builder.Length + " house builders.");
-                ProceduralStructures.Building building = new ProceduralStructures.Building();
                 foreach (HouseBuilder h in builder) {
                     Undo.RegisterFullObjectHierarchyUndo(h.gameObject, "Remove structures");
-                    building.ClearMeshes(h.gameObject);
+                    Building.ClearMeshes(h.gameObject);
                 }
             } else {
                 Debug.Log("No builders were found.");

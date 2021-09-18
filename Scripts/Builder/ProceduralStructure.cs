@@ -189,7 +189,6 @@ namespace ProceduralStructures {
                     tunnelObject.transform.localRotation = Quaternion.identity;
                     tunnelObject.isStatic = target.isStatic;
                 }
-                DebugStopwatch stopwatch = new DebugStopwatch();
                 RebuildCave(cave, tunnel, tunnelObject);
             }
         }
@@ -350,6 +349,43 @@ namespace ProceduralStructures {
             go.transform.localScale = Vector3.one;
             go.isStatic = parent.isStatic;
             return go;
+        }
+
+        public void ConstructFrameHouse(FrameHouse house, GameObject target) {
+            MeshObject frameConstruction = new MeshObject();
+            frameConstruction.transform = target.transform;
+            FrameDefinition frame = house.frame;
+            float thick = house.beamThickness;
+            Vector3 baseExtends = new Vector3(thick/2, thick/2, thick/2);
+            foreach (FrameDefinition.Edge edge in frame.edges) {
+                if (edge.a < frame.points.Count && edge.b < frame.points.Count) {
+                    frameConstruction.AddObject(Beam(frame.points[edge.a], frame.points[edge.b], house.beamThickness, house.uvScale));
+                }
+            }
+            foreach (Vector3 v in frame.points) {
+                frameConstruction.AddObject(BeamConnector(v, house.beamThickness, house.uvScale));
+            }
+            frameConstruction.CleanupMesh();
+            frameConstruction.Build(target, house.beamMaterial);
+        }
+
+        MeshObject Beam(Vector3 a, Vector3 b, float thickness, float uvScale = 1f) {
+            MeshObject o = new MeshObject();
+            float beamLength = (b-a).magnitude - thickness;
+            o.AddCube(Vector3.zero, new Vector3(beamLength/2, thickness/2, thickness/2));
+            o.SetUVBoxProjection(uvScale);
+            o.Rotate(Quaternion.LookRotation(b-a, Vector3.up) * Quaternion.AngleAxis(-90f, Vector3.up));
+            o.Translate(a + (b-a)/2);
+            return o;
+        }
+
+        MeshObject BeamConnector(Vector3 a, float thickness, float uvScale = 1f) {
+            MeshObject o = new MeshObject();
+            o.AddCube(Vector3.zero, new Vector3(thickness/2, thickness/2, thickness/2));
+            o.SetUVBoxProjection(uvScale);
+            o.Rotate(Quaternion.AngleAxis(-90f, Vector3.up));
+            o.Translate(a);
+            return o;
         }
     }
 }

@@ -199,7 +199,11 @@ namespace ProceduralStructures {
 
         GameObject InstanceFromPlaceholder(CityDefinition.HousePlaceholder h) {
             if (h.prefab != null) {
+            // #if UNITY_EDITOR
+            //     return UnityEditor.PrefabUtility.InstantiatePrefab(h.prefab) as GameObject;
+            // #else
                 return GameObject.Instantiate(h.prefab);
+            // #endif
             }
             GameObject go = new GameObject(h.houseDefinition.name);
             go.AddComponent<HouseBuilder>().houseDefinition = h.houseDefinition;
