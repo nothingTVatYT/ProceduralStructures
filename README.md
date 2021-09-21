@@ -40,11 +40,11 @@ a name like "GeneratedHouses" to make clear that all below is subject to the reg
 Click on the "Transform to points" button. This will generate a list of locations and calculate the street length.
 Finally you can click on "Place buildings" and several boxes should appear along your streets. These are the placeholders in more or less the
 correct size and can give you a first impression of your future city.
-You will notice some disabled game objects in your hierarchy. These are the ones that collided with others and the scipt won't place a house there.
-If you're not OK with this automated descission you can enable, disable or delete to your liking.
+You will notice some disabled game objects in your hierarchy. These are the ones that collided with others or a street and the script won't place a house there.
+If you're not OK with this automated decision you can enable, disable or delete to your liking.
 
 ## Grey boxes to houses at last
-The boxes don't make a beutiful city yet but as I mentioned these are the placeholders for an intermediate step. You can build/rebuild individual houses
+The boxes don't make a beautiful city yet but as I mentioned these are the placeholders for an intermediate step. You can build/rebuild individual houses
 but for a start you should add the ProceduralStructuresRoot component to the parent of your city (or to the city or somewhere wlese above the
 placeholders. That component lets you rebuild all houses from that point into all children.
 Click on the "Rebuild all in hierarchy starting here" button and it will do what the button label says.
