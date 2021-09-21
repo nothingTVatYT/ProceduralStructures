@@ -15,7 +15,7 @@ namespace ProceduralStructures {
         }
 
         public bool Equals(TEdge other) {
-            return this.a.Equals(other.a) && this.b.Equals(other.b) || this.a.Equals(other.b) && this.b.Equals(other.a);
+            return this.GetHashCode() == other.GetHashCode() && this.a.Equals(other.a) && this.b.Equals(other.b); // || this.a.Equals(other.b) && this.b.Equals(other.a);
         }
 
         public override int GetHashCode()
@@ -28,6 +28,17 @@ namespace ProceduralStructures {
             if (obj != null && obj is TEdge) return Equals(obj as TEdge);
             return false;
         }
+
+        public void ResetEdgeLinks() {
+            a.SetConnected(b);
+            b.SetConnected(a);
+        }
+
+        public void RemoveEdgeLinks() {
+            a.connected.Remove(b);
+            b.connected.Remove(a);
+        }
+
 
         public override string ToString()
         {

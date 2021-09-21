@@ -55,11 +55,11 @@ namespace ProceduralStructures {
         }
 
         protected int AddUnique(Vector3 pos) {
-            int idx = vertices.FindIndex((v) => (SameInTolerance(v.pos,pos)));
+            Vertex nv = new Vertex(pos);
+            int idx = vertices.FindIndex((v) => (nv.Equals(v)));
             if (idx >= 0) return idx;
-            Vertex v = new Vertex(pos);
-            v.id = vertices.Count;
-            vertices.Add(v);
+            nv.id = vertices.Count;
+            vertices.Add(nv);
             return vertices.Count - 1;
         }
 
@@ -205,11 +205,13 @@ namespace ProceduralStructures {
         public void CleanupMesh() {
             HashSet<Triangle> toBeRemoved = new HashSet<Triangle>();
             foreach (Triangle triangle in triangles) {
-                foreach (Triangle adjacent in triangle.GetAdjacentTriangles()) {
-                    if (Mathf.Abs(Vector3.Dot(triangle.normal, adjacent.normal) + 1f) < 1e-3f) {
-                        if (!triangle.SharesTurningEdge(adjacent)) {
-                            toBeRemoved.Add(triangle);
-                            toBeRemoved.Add(adjacent);
+                if (!toBeRemoved.Contains(triangle)) {
+                    foreach (Triangle adjacent in triangle.GetAdjacentTriangles()) {
+                        if (Mathf.Abs(Vector3.Dot(triangle.normal, adjacent.normal) + 1f) < 1e-3f) {
+                            if (!triangle.SharesTurningEdge(adjacent)) {
+                                toBeRemoved.Add(triangle);
+                                toBeRemoved.Add(adjacent);
+                            }
                         }
                     }
                 }
@@ -217,56 +219,217 @@ namespace ProceduralStructures {
             foreach (Triangle t in toBeRemoved) Remove(t);
         }
 
-        public void RemoveInnerFaces() {
-            int trianglesNonManifold = 0;
-            List<Triangle> toBeRemoved = new List<Triangle>();
-            foreach (Triangle triangle in triangles) {
-                Triangle t = triangle.GetDuplicate();
-                if (t != null) {
-                    toBeRemoved.Add(triangle);
-                }
+        public void LinkEdges(List<TEdge> edges) {
+            foreach (TEdge edge in edges) {
+                edge.a.SetConnected(edge.b);
             }
-            Debug.Log("duplicate triangles: " + toBeRemoved.Count);
-            toBeRemoved.ForEach(t => Remove(t));
-            foreach (Triangle triangle in triangles) {
-                List<TEdge> nonManifold = triangle.GetNonManifoldEdges();
-                if (nonManifold.Count > 0) {
-                    trianglesNonManifold++;
-                    foreach (TEdge edge in nonManifold) {
-                        DebugLocalEdge(edge.a.pos, edge.b.pos, Color.red);
-                    }
-                    Triangle hitTriangle;
-                    bool fromBack;
-                    Vector3 intersection;
-                    if (RayHitTriangle(triangle.center + triangle.normal*1e-3f, triangle.normal, false, out hitTriangle, out fromBack, out intersection)) {
-                        if (fromBack) {
-                            toBeRemoved.Add(triangle);
-                        }
-                    }
-                }
-            }
-            Debug.Log("non manifold triangles: " + trianglesNonManifold);
-            Debug.Log("triangles to be removed: " + toBeRemoved.Count);
-            toBeRemoved.ForEach(t => Remove(t));
         }
 
-        public bool IsInnerFace(Triangle triangle) {
-            bool result = false;
-            Vector3 intersection;
-            float dist;
-            float nearestHit = float.MaxValue;
-            foreach (Triangle t in triangles) {
-                if (t != triangle) {
-                    if (GeometryTools.RayHitTriangle(triangle.center, triangle.normal, t.v0.pos, t.v2.pos, t.v1.pos, out intersection, out dist)) {
-                        if (dist < nearestHit) {
-                            nearestHit = dist;
+        bool IsInEdgeSet(Vertex a, Vertex b, HashSet<TEdge> set) {
+            if (set.Count == 0) return false;
+            TEdge e = new TEdge(a, b);
+            return set.Contains(e);
+        }
+
+        IEnumerable<List<Vertex>> FollowLoop(Stack<Vertex> l, Vertex head, HashSet<Vertex> set, HashSet<TEdge> visitedEdges, int maxLength, HashSet<EdgeLoop> foundEdgeLoops) {
+            if (l == null) {
+                l = new Stack<Vertex>();
+                foreach (Vertex v in set) {
+                    l.Push(v);
+                    foreach (List<Vertex> nl in FollowLoop(l, v, set, visitedEdges, maxLength, foundEdgeLoops)) {
+                        maxLength = Mathf.Min(maxLength, nl.Count);
+                        yield return nl;
+                        if (nl.Count == 3) {
+                            yield break;
                         }
-                        result = true;
+                    }
+                    l.Pop();
+                }
+                yield break;
+            }
+            if (l.Count > 2 && l.Peek().connected.Contains(head)) {
+                // C# converts a stack into a list as if you would pop each element top to bottom, not bottom to top
+                List<Vertex> list = new List<Vertex>(l);
+                list.Reverse();
+                // only report edge loops not found previously
+                if (!foundEdgeLoops.Contains(new EdgeLoop(list))) {
+                    maxLength = Mathf.Min(maxLength, list.Count);
+                    yield return list;
+                }
+                yield break;
+            }
+            if (l.Count >= maxLength) {
+                //Debug.Log("break because loop >= " + maxLength);
+                yield break;
+            }
+            Vertex tail = l.Count == 0 ? head : l.Peek();
+            foreach (Vertex v in tail.connected) {
+                if (set.Contains(v) && !l.Contains(v) && !IsInEdgeSet(tail, v, visitedEdges)) {
+                    l.Push(v);
+                    foreach (List<Vertex> nl in FollowLoop(l, head, set, visitedEdges, maxLength, foundEdgeLoops)) {
+                        maxLength = Mathf.Min(maxLength, nl.Count);
+                        yield return nl;
+                        if (nl.Count == 3) {
+                            yield break;
+                        }
+                    }
+                    l.Pop();
+                }
+            }
+        }
+
+        public HashSet<EdgeLoop> FindSmallEdgeLoops(HashSet<Vertex> set, int maxLength) {
+            // find a vertex with only two connections
+            Vertex start = null;
+            foreach (Vertex v in set) {
+                if (v.connected.Count == 2) {
+                    start = v;
+                    break;
+                }
+            }
+            // if there is none we may have a closed object and we can pick any one with connected >=2
+            if (start == null) {
+                foreach (Vertex v in set) {
+                    if (v.connected.Count > 2) {
+                        start = v;
                         break;
                     }
                 }
             }
-            return result;
+            if (start == null) {
+                Debug.LogWarning("There is no closed polygon in this edge loop.");
+                return null;
+            }
+            HashSet<TEdge> visitedEdges = new HashSet<TEdge>();
+            List<List<Vertex>> allLoops;
+            maxLength = Mathf.Min(set.Count, maxLength);
+
+            HashSet<EdgeLoop> foundEdgeLoops = new HashSet<EdgeLoop>();
+            // this would be an endless loop but the break seems to work now
+            while (set.Count > 0) {
+                allLoops = new List<List<Vertex>>(FollowLoop(null, null, set, visitedEdges, maxLength, foundEdgeLoops));
+                if (allLoops.Count == 0) {
+                    break;
+                }
+                allLoops.Sort((x,y) => x.Count.CompareTo(y.Count));
+                List<Vertex> loop = allLoops[0];
+                foundEdgeLoops.Add(new EdgeLoop(loop));
+
+                for (int i = 0; i < loop.Count; i++) {
+                    int j = i < loop.Count-1 ? i+1 : 0;
+                    // is this is a border edge exclude its reverse as well
+                    if (loop[i].connected.Count == 2 || loop[j].connected.Count == 2) {
+                        visitedEdges.Add(new TEdge(loop[j], loop[i]));
+                    }
+                    visitedEdges.Add(new TEdge(loop[i], loop[j]));
+                }
+            }
+            Debug.Log("found " + foundEdgeLoops.Count + " unique small edge loops.");
+            return foundEdgeLoops;
+        }
+
+        public List<Triangle> CloseUnorderedEdgeLoops(List<TEdge> edges, float uvScale) {
+            DebugStopwatch sw = new DebugStopwatch().Start("close unordered edge loop");
+            LinkEdges(edges);
+            // get all vertices in edges, edges are encoded in Vertex.connected
+            HashSet<Vertex> allVertices = new HashSet<Vertex>();
+            List<TEdge> borderEdges = new List<TEdge>();
+            foreach (TEdge edge in edges) {
+                allVertices.Add(edge.a);
+                allVertices.Add(edge.b);
+                if (edge.a.connected.Count <=2 || edge.b.connected.Count <= 2) {
+                    borderEdges.Add(edge);
+                }
+            }
+            Vector3 center = GetCenter(allVertices);
+            // find edge loops
+            HashSet<EdgeLoop> loops = FindSmallEdgeLoops(allVertices, edges.Count);
+            Debug.Log(sw.Stop());
+            List<Triangle> generated = new List<Triangle>();
+            if (loops != null) {
+                foreach (EdgeLoop loop in loops) {
+                    generated.AddRange(CloseEdgeLoop(loop.Vertices));
+                }
+            }
+            SetNormals(generated);
+            // we have no idea what should be the normals but just assume that the center is inside
+            // and the majority of the faces should have their normals point outwards
+            float dotSum = 0;
+            foreach (Triangle t in generated) {
+                dotSum += Vector3.Dot(t.normal, (center-t.center).normalized);
+            }
+            if (dotSum > 0) {
+                FlipNormals(generated);
+            }
+            return generated;
+        }
+
+        List<Triangle> CloseEdgeLoop(IEnumerable<Vertex> loop) {
+            List<Triangle> generated = new List<Triangle>();
+            // we assume this is a small edge loop that is at least more or less planar
+            Vector3 loopCenter = GetCenter(loop);
+            CircularList<Vertex> verts = new CircularList<Vertex>(loop);
+            // search ear
+            int index = 0;
+            int noAction = 0;
+            while (verts.Count > 3) {
+                Vector3 dirFw = verts[index+1].pos - verts[index].pos;
+                Vector3 dirBk = verts[index-1].pos - verts[index].pos;
+                Vector3 normal = Vector3.Cross(dirFw, dirBk);
+                Vector3 normFw = Vector3.Cross(dirFw, normal);
+                if (Vector3.Dot(dirBk, normFw) < 0) {
+                    // this should be an ear
+                    generated.Add(triangles[AddTriangle(verts[index-1], verts[index], verts[index+1])]);
+                    verts.RemoveAt(index);
+                    noAction = 0;
+                } else {
+                    index++;
+                    noAction++;
+                    if (noAction >= verts.Count) {
+                        Debug.LogWarning("There is a bug in CloseEdgeLoop: we haven't found an ear all the way around.");
+                    }
+                }
+            }
+            // just close the last three vertices
+            generated.Add(triangles[AddTriangle(verts[0], verts[1], verts[2])]);
+            return generated;
+        }
+
+        Vertex GetVertexWithTwoConnections(IEnumerable<Vertex> l, HashSet<Vertex> exclusion) {
+            foreach (Vertex v in l) {
+                if (!exclusion.Contains(v) && v.connected.Count >= 2) {
+                    return v;
+                }
+            }
+            return null;
+        }
+
+        public void SetNormals(List<Triangle> triangles) {
+            List<Triangle> all = new List<Triangle>(triangles);
+            List<Triangle> connected = new List<Triangle>();
+            Triangle first = all[0];
+            connected.Add(first);
+            while (connected.Count < triangles.Count) {
+                bool foundNext = false;
+                for (int i = 0; i < connected.Count; i++) {
+                    Triangle next = connected[i];
+                    foreach (Triangle t in next.GetAdjacentTriangles()) {
+                        if (all.Contains(t) && !connected.Contains(t)) {
+                            if (next.SharesTurningEdge(t)) {
+                                if (triangles.Contains(t))
+                                    t.FlipNormal();
+                                else {
+                                    next.FlipNormal();
+                                    FlipNormals(connected);
+                                }
+                            }
+                            connected.Add(t);
+                            foundNext = true;
+                        }
+                    }
+                }
+                if (!foundNext) break;
+            }
         }
 
         public bool RayHitTriangle(Vector3 origin, Vector3 direction, bool ignoreFromBack, out Triangle triangleHit, out bool fromBack, out Vector3 intersection) {
@@ -491,6 +654,19 @@ namespace ProceduralStructures {
             return indices.ToArray();
         }
 
+        public int[] FillPolygon(List<TEdge> edges) {
+            List<int> result = new List<int>();
+            if (edges.Count == 3) {
+                result.Add(AddTriangle(new Triangle(edges[0], edges[1], edges[2])));
+                return result.ToArray();
+            }
+            Vertex c = edges[0].a;
+            for (int i = 0; i < edges.Count-1; i++) {
+                result.Add(AddTriangle(new Triangle(c, edges[i].b, edges[i+1].b)));
+            }
+            return result.ToArray();
+        }
+
         public int[] FillPolygon(List<Vertex> edgeLoop, List<Vertex> hole) {
             List<int> createdTriangles = new List<int>();
 
@@ -589,12 +765,14 @@ namespace ProceduralStructures {
             return sum / vertices.Count;
         }
 
-        public Vector3 GetCenter(List<Vertex> l) {
+        public Vector3 GetCenter(IEnumerable<Vertex> l) {
             Vector3 sum = Vector3.zero;
+            int items = 0;
             foreach (Vertex vertex in l) {
                 sum += vertex.pos;
+                items++;
             }
-            return sum / l.Count;
+            return sum / items;
         }
 
         public void FlipNormals() {
@@ -606,6 +784,12 @@ namespace ProceduralStructures {
         public void FlipNormals(IEnumerable<int> l) {
             foreach (int i in l) {
                 triangles[i].FlipNormal();
+            }
+        }
+
+        public void FlipNormals(IEnumerable<Triangle> l) {
+            foreach (Triangle t in l) {
+                t.FlipNormal();
             }
         }
 
@@ -992,6 +1176,10 @@ namespace ProceduralStructures {
             Debug.DrawLine(w-Vector3.right*d, w+Vector3.right*d, color, 5);
             Debug.DrawLine(w-Vector3.up*d, w+Vector3.down*d, color, 5);
             Debug.DrawLine(w-Vector3.forward*d, w+Vector3.back*d, color, 5);
+        }
+
+        void DumpVertexLists(List<List<Vertex>> lists, string name) {
+            System.IO.File.WriteAllLines(name, lists.ConvertAll<string>(l => l.Elements()));
         }
 
         string ToString(Vector3[] l) {

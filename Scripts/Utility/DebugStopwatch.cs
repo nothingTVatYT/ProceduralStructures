@@ -25,7 +25,7 @@ namespace ProceduralStructures {
 
         public override string ToString() {
             TimeSpan ts = stopwatch.Elapsed;
-            return string.Format("{0}: {1:00}:{2:00}:{3:00}.{4:00}", purpose, ts.Hours, ts.Minutes, ts.Seconds, ts.Milliseconds);
+            return string.Format("{0}: {1:00}:{2:00}:{3:00}.{4:000}", purpose, ts.Hours, ts.Minutes, ts.Seconds, ts.Milliseconds);
         }
     }
 }

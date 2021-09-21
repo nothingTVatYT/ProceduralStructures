@@ -7,6 +7,7 @@ namespace ProceduralStructures {
         bool reversedAccess = false;
         public int indexOffset = 0;
 
+        ///<summary>This creates a read-only view on the list which will not be changed</summary>
         public CircularReadonlyList(List<T> orig) {
             data = orig;
         }
@@ -25,10 +26,12 @@ namespace ProceduralStructures {
 
         new public int Count { get { return data.Count; } }
 
+        /// <summary>This just changes the access order, it won't change the underlying list</summary>
         new public void Reverse() {
             reversedAccess = !reversedAccess;
         }
 
+        ///<summary>Shift and rotate the items so that the new index 0 points to the previous 1 and so on
         public void Shift() {
             if (!reversedAccess) indexOffset++; else indexOffset--;
             if (indexOffset < 0) indexOffset += data.Count;

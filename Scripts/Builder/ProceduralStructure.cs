@@ -357,6 +357,7 @@ namespace ProceduralStructures {
             FrameDefinition frame = house.frame;
             float thick = house.beamThickness;
             Vector3 baseExtends = new Vector3(thick/2, thick/2, thick/2);
+            DebugStopwatch sw = new DebugStopwatch().Start("Creating frame");
             foreach (FrameDefinition.Edge edge in frame.edges) {
                 if (edge.a < frame.points.Count && edge.b < frame.points.Count) {
                     frameConstruction.AddObject(Beam(frame.points[edge.a], frame.points[edge.b], house.beamThickness, house.uvScale));
@@ -366,7 +367,18 @@ namespace ProceduralStructures {
                 frameConstruction.AddObject(BeamConnector(v, house.beamThickness, house.uvScale));
             }
             frameConstruction.CleanupMesh();
+            Debug.Log(sw.Stop() + ", vertices: " + frameConstruction.VerticesCount + ", triangles: " + frameConstruction.TrianglesCount);
+
+            MeshObject wallConstruction = new MeshObject();
+            wallConstruction.transform = target.transform;
+            List<Vertex> vertices = wallConstruction.AddRange(frame.points);
+            List<TEdge> edges = new List<TEdge>();
+            frame.edges.ForEach(e => edges.Add(new TEdge(vertices[e.a], vertices[e.b])));
+            List<Triangle> wallTriangles = wallConstruction.CloseUnorderedEdgeLoops(edges, house.uvScale);
+            wallConstruction.SetNormals(wallTriangles);
+
             frameConstruction.Build(target, house.beamMaterial);
+            wallConstruction.Build(target, house.wallMaterial);
         }
 
         MeshObject Beam(Vector3 a, Vector3 b, float thickness, float uvScale = 1f) {

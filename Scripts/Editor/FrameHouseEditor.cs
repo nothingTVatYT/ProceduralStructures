@@ -2,6 +2,7 @@ using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 using UnityEditor;
+using ExtensionMethods;
 
 namespace ProceduralStructures {
 [CustomEditor(typeof(FrameHouse))]
@@ -10,6 +11,7 @@ namespace ProceduralStructures {
         public enum Command { SetX, SetY, SetZ }
         List<int> selectedIds = new List<int>();
 
+        bool editFrame = false;
         bool captureDigits = false;
         string capturedDigits;
         Command previousCommand;
@@ -17,10 +19,11 @@ namespace ProceduralStructures {
 
         public override void OnInspectorGUI() {
             FrameHouse house = target as FrameHouse;
-            GUILayout.Label("Selected: " + selectedIds.Count);
+            GUILayout.Label("Selected: " + selectedIds.Count + " (" + selectedIds.Elements() + ")");
             if (selectedIds.Count > 0) {
                 GUILayout.Label("Selection Median: " + SelectionCenter());
             }
+            editFrame = GUILayout.Toggle(editFrame, "Edit Frame");
             DrawDefaultInspector();
             if (GUILayout.Button("Build")) {
                 ProceduralStructure ps = new ProceduralStructure();
@@ -35,111 +38,117 @@ namespace ProceduralStructures {
             Transform tf = house.gameObject.transform;
             Handles.matrix = house.gameObject.transform.localToWorldMatrix;
             Vector3 size = new Vector3(0.1f, 0.1f, 0.1f);
-            // handle keyboard events
-            int controlID = GUIUtility.GetControlID(FocusType.Passive);
-            if (guiEvent.GetTypeForControl(controlID) == EventType.KeyDown) {
-                switch (guiEvent.keyCode) {
-                    case KeyCode.D:
-                    if (guiEvent.control) {
-                        DuplicateSelectedPoints(frame);
+            if (editFrame) {
+                // handle keyboard events
+                int controlID = GUIUtility.GetControlID(FocusType.Passive);
+                if (guiEvent.GetTypeForControl(controlID) == EventType.KeyDown) {
+                    switch (guiEvent.keyCode) {
+                        case KeyCode.D:
+                        if (guiEvent.control) {
+                            DuplicateSelectedPoints(frame);
+                            guiEvent.Use();
+                        } else if (guiEvent.shift) {
+                            ExtrudeSelectedPoints(frame);
+                            guiEvent.Use();
+                        }
+                        break;
+                        case KeyCode.F:
+                        if (guiEvent.alt) {
+                            RemoveEdgeLoop(selectedIds);
+                        } else {
+                            CreateEdgeLoop(selectedIds);
+                        }
                         guiEvent.Use();
-                    } else if (guiEvent.shift) {
-                        ExtrudeSelectedPoints(frame);
+                        break;
+                        case KeyCode.S:
+                        if (!guiEvent.shift && !guiEvent.control && !guiEvent.alt) {
+                            SplitEdges(selectedIds);
+                            guiEvent.Use();
+                        }
+                        break;
+                        case KeyCode.V:
+                        if (!guiEvent.shift && !guiEvent.control && !guiEvent.alt) {
+                            ValidateData();
+                            guiEvent.Use();
+                        }
+                        break;
+                        case KeyCode.X:
+                        if (!guiEvent.shift && !guiEvent.control && !guiEvent.alt) {
+                            CaptureDigitsForCommand(Command.SetX);
+                            guiEvent.Use();
+                        }
+                        break;
+                        case KeyCode.Y:
+                        if (!guiEvent.shift && !guiEvent.control && !guiEvent.alt) {
+                            CaptureDigitsForCommand(Command.SetY);
+                            guiEvent.Use();
+                        }
+                        break;
+                        case KeyCode.Z:
+                        if (!guiEvent.shift && !guiEvent.control && !guiEvent.alt) {
+                            CaptureDigitsForCommand(Command.SetZ);
+                            guiEvent.Use();
+                        }
+                        break;
+                        case KeyCode digit when (digit >= KeyCode.Alpha0 && digit <= KeyCode.Alpha9) || digit == KeyCode.Period || digit == KeyCode.Backspace:
+                        if (captureDigits) {
+                            AddToNumber(guiEvent.keyCode, guiEvent.character);
+                        }
                         guiEvent.Use();
-                    }
-                    break;
-                    case KeyCode.F:
-                    if (guiEvent.alt) {
-                        RemoveEdgeLoop(selectedIds);
-                    } else {
-                        CreateEdgeLoop(selectedIds);
-                    }
-                    guiEvent.Use();
-                    break;
-                    case KeyCode.S:
-                    if (!guiEvent.shift && !guiEvent.control && !guiEvent.alt) {
-                        SplitEdges(selectedIds);
+                        break;
+                        case KeyCode.Return:
+                        StopCapturingDigits();
                         guiEvent.Use();
+                        break;
                     }
-                    break;
-                    case KeyCode.V:
-                    if (!guiEvent.shift && !guiEvent.control && !guiEvent.alt) {
-                        ValidateData();
-                        guiEvent.Use();
-                    }
-                    break;
-                    case KeyCode.X:
-                    if (!guiEvent.shift && !guiEvent.control && !guiEvent.alt) {
-                        CaptureDigitsForCommand(Command.SetX);
-                        guiEvent.Use();
-                    }
-                    break;
-                    case KeyCode.Y:
-                    if (!guiEvent.shift && !guiEvent.control && !guiEvent.alt) {
-                        CaptureDigitsForCommand(Command.SetY);
-                        guiEvent.Use();
-                    }
-                    break;
-                    case KeyCode.Z:
-                    if (!guiEvent.shift && !guiEvent.control && !guiEvent.alt) {
-                        CaptureDigitsForCommand(Command.SetZ);
-                        guiEvent.Use();
-                    }
-                    break;
-                    case KeyCode digit when (digit >= KeyCode.Alpha0 && digit <= KeyCode.Alpha9) || digit == KeyCode.Period || digit == KeyCode.Backspace:
-                    if (captureDigits) {
-                        AddToNumber(guiEvent.keyCode, guiEvent.character);
-                    }
-                    guiEvent.Use();
-                    break;
-                    case KeyCode.Return:
-                    StopCapturingDigits();
-                    guiEvent.Use();
-                    break;
                 }
-            }
-            // move selection
-            if (selectedIds.Count > 0) {
-                Vector3 selectionCenter = SelectionCenter();
-                Vector3 newPos = Handles.PositionHandle(selectionCenter, Quaternion.identity);
-                if (newPos != selectionCenter) {
-                    Vector3 diff = newPos - selectionCenter;
-                    selectedIds.ForEach(i => frame.points[i] += diff);
+                // move selection
+                if (selectedIds.Count > 0) {
+                    Vector3 selectionCenter = SelectionCenter();
+                    Vector3 newPos = Handles.PositionHandle(selectionCenter, Quaternion.identity);
+                    if (newPos != selectionCenter) {
+                        Vector3 diff = newPos - selectionCenter;
+                        selectedIds.ForEach(i => frame.points[i] += diff);
+                    }
                 }
             }
             // draw edges
-            for (int i = 0; i < frame.edges.Count; i++) {
-                FrameDefinition.Edge edge = frame.edges[i];
-                if (edge.a < frame.points.Count && edge.b < frame.points.Count) {
-                    Handles.DrawLine(frame.points[edge.a], frame.points[edge.b]);
-                }
-            }
-            // draw handles for each point
-            bool selectionChanged = false;
-            for (int i = 0; i < frame.points.Count; i++) {
-                Vector3 p = frame.points[i];
-                Handles.color = (selectedIds.Contains(i)) ? Color.yellow : Color.white;
-                Handles.DrawWireCube(p, new Vector3(0.1f, 0.1f, 0.1f));
-                int controlId = GUIUtility.GetControlID(FocusType.Passive);
-                Vector3 np = Handles.FreeMoveHandle(controlId, p, Quaternion.identity, 0.1f, Vector3.zero, Handles.DotHandleCap);
-                if (controlId == EditorGUIUtility.hotControl) {
-                    if (guiEvent.type == EventType.Used && guiEvent.button == 0) {
-                        if (guiEvent.control) {
-                            if (selectedIds.Contains(i)) {
-                                selectedIds.Remove(i);
-                            } else {
-                                selectedIds.Add(i);
-                            }
-                        } else {
-                            selectedIds.Clear();
-                            selectedIds.Add(i);
-                        }
-                        selectionChanged = true;
+            if (frame.edges != null) {
+                for (int i = 0; i < frame.edges.Count; i++) {
+                    FrameDefinition.Edge edge = frame.edges[i];
+                    if (edge.a < frame.points.Count && edge.b < frame.points.Count) {
+                        Handles.DrawLine(frame.points[edge.a], frame.points[edge.b]);
                     }
                 }
-                //house.frame.points[i] = np;
             }
-            if (selectionChanged) Repaint();
+            if (editFrame) {
+                // draw handles for each point
+                bool selectionChanged = false;
+                for (int i = 0; i < frame.points.Count; i++) {
+                    Vector3 p = frame.points[i];
+                    Handles.color = (selectedIds.Contains(i)) ? Color.yellow : Color.white;
+                    Handles.DrawWireCube(p, new Vector3(0.1f, 0.1f, 0.1f));
+                    int controlId = GUIUtility.GetControlID(FocusType.Passive);
+                    Vector3 np = Handles.FreeMoveHandle(controlId, p, Quaternion.identity, 0.1f, Vector3.zero, Handles.DotHandleCap);
+                    if (controlId == EditorGUIUtility.hotControl) {
+                        if (guiEvent.type == EventType.Used && guiEvent.button == 0) {
+                            if (guiEvent.control) {
+                                if (selectedIds.Contains(i)) {
+                                    selectedIds.Remove(i);
+                                } else {
+                                    selectedIds.Add(i);
+                                }
+                            } else {
+                                selectedIds.Clear();
+                                selectedIds.Add(i);
+                            }
+                            selectionChanged = true;
+                        }
+                    }
+                    //house.frame.points[i] = np;
+                }
+                if (selectionChanged) Repaint();
+            }
         }
 
         void CaptureDigitsForCommand(Command command) {

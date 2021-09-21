@@ -36,6 +36,13 @@ namespace ProceduralStructures {
             this.v2.SetTriangle(this);
         }
 
+        public Triangle(TEdge a, TEdge b, TEdge c) {
+            this.v0 = a.a;
+            this.v1 = b.a;
+            this.v2 = c.a;
+            ResetTriangleLinks();
+        }
+
         public override int GetHashCode()
         {
             return v0.GetHashCode() + v1.GetHashCode() + v2.GetHashCode();
@@ -63,7 +70,7 @@ namespace ProceduralStructures {
         }
 
         public bool Equals(Triangle other) {
-            return GetCommonVertices(other) == 3 && normal == other.normal;
+            return GetHashCode() == other.GetHashCode() && normal == other.normal && GetCommonVertices(other) == 3;
         }
 
         public override bool Equals(object obj)
@@ -98,7 +105,7 @@ namespace ProceduralStructures {
         }
 
         /// <summary>checks whether any vertex is contained by this triangle with a tolerance(+-) on the normal</summary>
-        public bool ContainsAnyVertex(IEnumerable<Vertex> other, float heightTolerance = 0.2f) {
+        public bool ContainsAnyVertex(IEnumerable<Vertex> other, out Vertex hit, float heightTolerance = 0.2f) {
             Vector3 n = normal;
             foreach (Vertex v in other) {
                 if (v0 == v || v1 == v || v2 == v) {
@@ -114,10 +121,18 @@ namespace ProceduralStructures {
                     continue;
                 }
                 if (Mathf.Abs(Vector3.Dot((v.pos-v0.pos), normal)) < heightTolerance) {
+                    hit = v;
                     return true;
                 }
             }
+            hit = null;
             return false;
+        }
+
+        /// <summary>checks whether any vertex is contained by this triangle with a tolerance(+-) on the normal</summary>
+        public bool ContainsAnyVertex(IEnumerable<Vertex> other, float heightTolerance = 0.2f) {
+            Vertex hit;
+            return ContainsAnyVertex(other, out hit, heightTolerance);
         }
 
         /// <summary>checks whether the point is in the half space above this triangle</summary>

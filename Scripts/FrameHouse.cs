@@ -9,5 +9,6 @@ namespace ProceduralStructures {
         public float beamThickness = 0.1f;
         public Material beamMaterial;
         public float uvScale = 1f;
+        public Material wallMaterial;
     }
 }

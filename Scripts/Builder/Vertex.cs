@@ -7,6 +7,7 @@ namespace ProceduralStructures {
         public int id;
         public Vector3 pos;
         public List<Triangle> triangles = new List<Triangle>();
+        public List<Vertex> connected = new List<Vertex>();
         public Vertex(Vector3 pos) {
             this.pos = pos;
             id = GetHashCode();
@@ -15,6 +16,19 @@ namespace ProceduralStructures {
             if (!triangles.Contains(triangle)) {
                 triangles.Add(triangle);
             }
+        }
+        public void SetConnected(Vertex v) {
+            if (!connected.Contains(v)) {
+                connected.Add(v);
+            }
+            if (!v.connected.Contains(this)) {
+                v.connected.Add(this);
+            }
+        }
+
+        public void Unlink(Vertex v) {
+            v.connected.Remove(this);
+            connected.Remove(v);
         }
 
         public bool Equals(Vertex obj) {
