@@ -13,6 +13,7 @@ public class HullBuilderEditor : Editor
         DrawDefaultInspector();
         if (GUILayout.Button("Rebuild")) {
             hull.Rebuild();
+            ProceduralStructures.EditorUtilities.CreateSecondaryUV(hull.gameObject.GetComponentsInChildren<MeshFilter>());
         }
     }
 }
