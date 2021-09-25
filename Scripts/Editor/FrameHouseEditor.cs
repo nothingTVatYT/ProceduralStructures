@@ -28,6 +28,7 @@ namespace ProceduralStructures {
             if (GUILayout.Button("Build")) {
                 ProceduralStructure ps = new ProceduralStructure();
                 ps.ConstructFrameHouse(house, house.constructionRoot);
+                EditorUtilities.CreateSecondaryUV(house.constructionRoot.GetComponentsInChildren<MeshFilter>());
             }
         }
 

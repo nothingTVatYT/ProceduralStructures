@@ -23,6 +23,7 @@ namespace ProceduralStructures {
                 caveBuilder.UpdateWayPoints();
                 ProceduralStructure ps = new ProceduralStructure();
                 ps.RebuildCave(caveBuilder.caveDefinition, caveBuilder.generatedMeshParent);
+                EditorUtilities.CreateSecondaryUV(caveBuilder.generatedMeshParent.GetComponentsInChildren<MeshFilter>());
             }
         }
     }

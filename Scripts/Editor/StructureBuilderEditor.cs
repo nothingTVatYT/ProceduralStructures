@@ -15,6 +15,7 @@ public class StructureBuilderEditor : Editor {
             Undo.RegisterFullObjectHierarchyUndo(structureBuilder.gameObject, "Rebuild structure");
             ProceduralStructure p = new ProceduralStructure();
             p.RebuildLadder(structureBuilder.ladderDefinition, structureBuilder.gameObject);
+            EditorUtilities.CreateSecondaryUV(structureBuilder.gameObject.GetComponentsInChildren<MeshFilter>());
         }
         if (GUILayout.Button("Remove Meshes")) {
             Undo.RegisterFullObjectHierarchyUndo(structureBuilder.gameObject, "Remove meshes");

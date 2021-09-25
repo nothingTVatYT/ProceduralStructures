@@ -15,6 +15,7 @@ public class HouseBuilderEditor : Editor {
             ProceduralHouse p = new ProceduralHouse();
             p.excludeFromNavmesh += ExcludeFromNavmesh;
             p.RebuildHouseWithInterior(houseBuilder.houseDefinition, houseBuilder.gameObject);
+            EditorUtilities.CreateSecondaryUV(houseBuilder.gameObject.GetComponentsInChildren<MeshFilter>());
         }
         if (GUILayout.Button("Remove Meshes")) {
             Undo.RegisterFullObjectHierarchyUndo(houseBuilder.gameObject, "Remove meshes");

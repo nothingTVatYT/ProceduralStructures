@@ -19,6 +19,7 @@ public class ProceduralStructuresRootEditor : Editor {
                     Undo.RegisterFullObjectHierarchyUndo(h.gameObject, "Rebuild structures");
                     Building.ClearMeshes(h.gameObject);
                     p.RebuildHouseWithInterior(h.houseDefinition, h.gameObject);
+                    EditorUtilities.CreateSecondaryUV(h.gameObject.GetComponentsInChildren<MeshFilter>());
                 }
             } else {
                 Debug.Log("No builders were found.");

@@ -18,6 +18,7 @@ public class WallBuilderEditor : Editor
             wallBuilder.UpdatePoints();
             ProceduralStructure proc = new ProceduralStructure();
             proc.RebuildWall(wallBuilder.wall, wallBuilder.gameObject);
+            EditorUtilities.CreateSecondaryUV(wallBuilder.gameObject.GetComponentsInChildren<MeshFilter>());
         }
         if (GUILayout.Button("Ground markers")) {
             foreach (Transform t in wall.points) {
