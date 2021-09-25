@@ -358,6 +358,7 @@ namespace ProceduralStructures {
             float thick = house.beamThickness;
             Vector3 baseExtends = new Vector3(thick/2, thick/2, thick/2);
             DebugStopwatch sw = new DebugStopwatch().Start("Creating frame");
+
             foreach (FrameDefinition.Edge edge in frame.edges) {
                 if (edge.a < frame.points.Count && edge.b < frame.points.Count) {
                     frameConstruction.AddObject(Beam(frame.points[edge.a], frame.points[edge.b], house.beamThickness, house.uvScale));
@@ -376,6 +377,7 @@ namespace ProceduralStructures {
             frame.edges.ForEach(e => edges.Add(new TEdge(vertices[e.a], vertices[e.b])));
             List<Triangle> wallTriangles = wallConstruction.CloseUnorderedEdgeLoops(edges, house.uvScale);
             wallConstruction.SetNormals(wallTriangles);
+            wallConstruction.SetUVBoxProjection(house.uvScale);
 
             frameConstruction.Build(target, house.beamMaterial);
             wallConstruction.Build(target, house.wallMaterial);

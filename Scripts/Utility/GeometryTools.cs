@@ -41,6 +41,16 @@ namespace ProceduralStructures {
             return false;
         }
 
+        public static bool EdgeEdgeIntersectIgnoreEnds(Vector3 a, Vector3 b, Vector3 c, Vector3 d, out Vector3 intersection) {
+            float m;
+            float n;
+            if (LineLineIntersect(a, b, c, d, out intersection, out m, out n)) {
+                if (m>0 && m<1 && n>=0 && n<=1) return true;
+                if (m>=0 && m<=1 && n>0 && n<1) return true;
+            }
+            return false;
+        }
+
         public static bool EdgeEdgeIntersect(Vector3 a, Vector3 b, Vector3 c, Vector3 d, out Vector3 intersection) {
             float m;
             float n;
@@ -77,7 +87,7 @@ namespace ProceduralStructures {
             float divisorYZ = v.y*u.z - v.z*u.y;
             if (divisorXY == 0 && divisorXZ == 0 && divisorYZ == 0) {
                 // cannot devide by 0 => there is no solution
-                Debug.Log("no intersection in XY,XZ and YZ");
+                //Debug.Log("no intersection in XY,XZ and YZ");
                 return false;
             }
             if (divisorXY != 0) {
@@ -103,7 +113,7 @@ namespace ProceduralStructures {
                 intersection = a + m*u;
                 return true;
             }
-            Debug.Log("no intersection but found h=" + h + " and i=" + i);
+            //Debug.Log("no intersection but found h=" + h + " and i=" + i);
             return false;
         }
 

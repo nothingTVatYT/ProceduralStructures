@@ -275,22 +275,32 @@ namespace ProceduralStructures {
             uv2 = new Vector2((dlr*c.z + dfb*c.x + dud*c.x) * uvScale, (dlr*c.y + dfb*c.y + dud*c.z) * uvScale);
         }
 
-        public Triangle SetUVCylinderProjection(Vector3 center, Vector3 direction, float uOffset, float uvScale) {
-            uv0 = UVCylinderProjection(v0.pos, center, direction, uOffset, uvScale);
-            uv1 = UVCylinderProjection(v1.pos, center, direction, uOffset, uvScale);
-            uv2 = UVCylinderProjection(v2.pos, center, direction, uOffset, uvScale);
+        public Triangle SetUVCylinderProjection(Vector3 cylinderCenter, Vector3 direction, float uOffset, float uvScale) {
+            float dot = Vector3.Dot(center - cylinderCenter, direction);
+            Vector3 ms = cylinderCenter + dot*direction;
+            float u = -(dot+uOffset) * uvScale;
+            Vector3 lineToVertex = center - ms;
+            Vector3 vertexToCylinderDirection = lineToVertex.normalized;
+            float v = Mathf.Atan2(vertexToCylinderDirection.y, vertexToCylinderDirection.x) / Mathf.PI / 2;
+            if (v < 0) v += 1;
+            bool favorOne = v > 0.5f;
+
+            uv0 = UVCylinderProjection(v0.pos, cylinderCenter, direction, favorOne, uOffset, uvScale);
+            uv1 = UVCylinderProjection(v1.pos, cylinderCenter, direction, favorOne, uOffset, uvScale);
+            uv2 = UVCylinderProjection(v2.pos, cylinderCenter, direction, favorOne, uOffset, uvScale);
             return this;
         }
 
-        private static Vector2 UVCylinderProjection(Vector3 vertex, Vector3 center, Vector3 direction, float uOffset, float uvScale) {
-            float dot = Vector3.Dot(vertex - center, direction);
-            Vector3 ms = center + dot*direction;
-            Vector3 down = Vector3.down + Vector3.Cross(direction, Vector3.up)*0.05f;
-            // this should be replaced with a v scale setting
-            float r = 5;
+        private static Vector2 UVCylinderProjection(Vector3 vertex, Vector3 cylinderCenter, Vector3 direction, bool favorOne, float uOffset, float uvScale) {
+            float dot = Vector3.Dot(vertex - cylinderCenter, direction);
+            Vector3 ms = cylinderCenter + dot*direction;
             float u = (dot+uOffset) * uvScale;
-            float v = Vector3.Angle(vertex - ms, down) / 180f * r * uvScale;
-            //float v = Mathf.Atan2((vertex-ms).y, (vertex-ms).x) / 180f * r * uvScale;
+            Vector3 lineToVertex = vertex - ms;
+            Vector3 vertexToCylinderDirection = lineToVertex.normalized;
+            float v = Mathf.Atan2(vertexToCylinderDirection.y, vertexToCylinderDirection.x) / Mathf.PI / 2;
+            if (v < 0) v += 1;
+            if (Mathf.Abs(v) < 1e-1f && favorOne) v += 1f;
+            v *= uvScale * -Mathf.PI * 2; // * lineToVertex.magnitude;
             return new Vector2(u, v);
         }
 

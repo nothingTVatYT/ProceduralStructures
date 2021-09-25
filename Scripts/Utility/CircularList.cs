@@ -4,6 +4,8 @@ using UnityEngine;
 
 namespace ProceduralStructures {
     public class CircularList<T> : IEnumerable<T> {
+        public static int NOT_FOUND = int.MinValue;
+        public readonly int NotFound = NOT_FOUND;
         List<T> data;
         int indexOffset = 0;
         bool reversedAccess = false;
@@ -37,6 +39,20 @@ namespace ProceduralStructures {
             set { data[ToDataIndex(index)] = value; }
         }
 
+        public bool Contains(T item) {
+            return data.Contains(item);
+        }
+
+        public int IndexOf(T item) {
+            int dataIndex = data.IndexOf(item);
+            if (dataIndex < 0) return NOT_FOUND;
+            return ToVirtualIndex(dataIndex);
+        }
+
+        public bool IsConsecutiveIndex(int i1, int i2) {
+            return i2 == (i1+1)%data.Count;
+        }
+
         public bool Remove(T item) {
             return data.Remove(item);
         }
@@ -49,6 +65,10 @@ namespace ProceduralStructures {
             int clippedIndex = index % data.Count;
             if (clippedIndex < 0) clippedIndex += data.Count;
             return (data.Count + indexOffset + clippedIndex * (reversedAccess?-1:1)) % data.Count;
+        }
+
+        int ToVirtualIndex(int index) {
+            return reversedAccess ? (data.Count - index - indexOffset)%data.Count : index - indexOffset;
         }
 
         public class Enumerator : IEnumerator<T> {

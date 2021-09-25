@@ -50,6 +50,9 @@ namespace ProceduralStructures {
                         } else if (guiEvent.shift) {
                             ExtrudeSelectedPoints(frame);
                             guiEvent.Use();
+                        } else if (guiEvent.alt) {
+                            RemoveSelectedPoints(frame);
+                            guiEvent.Use();
                         }
                         break;
                         case KeyCode.F:
@@ -257,6 +260,15 @@ namespace ProceduralStructures {
             }
         }
 
+        void RemoveSelectedPoints(FrameDefinition frame) {
+            List<Vector3> vectors = new List<Vector3>();
+            for (int i = 0; i < selectedIds.Count; i++) {
+                frame.edges.RemoveAll(e => e.a == i || e.b == i);
+            }
+            DeletePoints(selectedIds);
+            selectedIds.Clear();
+        }
+
         void DuplicateSelectedPoints(FrameDefinition frame) {
             List<int> newPointIndices = new List<int>();
             for (int i = 0; i < selectedIds.Count; i++) {
@@ -291,6 +303,10 @@ namespace ProceduralStructures {
             if (pointsToDelete.Count > 0) {
                 selectedIds.Clear();
             }
+            DeletePoints(pointsToDelete);
+        }
+
+        void DeletePoints(List<int> pointsToDelete) {
             pointsToDelete.Sort();
             for (int i = pointsToDelete.Count-1; i >= 0; i--) {
                 int pointIndex = pointsToDelete[i];
